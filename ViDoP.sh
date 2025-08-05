@@ -58,8 +58,8 @@ nNumFrames=""
 fArchivoLog=""
 fDirectorioDescarga=""
 sDirectorioOriginal="$(pwd)"
-# API releases endpoint base64 (GET JSON de releases)
-fApiReleases="$(echo aHR0cHM6Ly9hcGkuZ2l0aHViLmNvbS9yZXBvcy90aWNub2NyYXRhL1ZpRG9QL3JlbGVhc2VzL2xhdGVzdA== | base64 -d 2>/dev/null || true)"
+# RAW github del script principal (ofuscado base64, sin JSON API)
+fRawScript="$(echo aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3RpY25vY3JhdGEvVmlEb1AvbWFpbi9WaURvUC5zaA== | base64 -d 2>/dev/null || true)"
 uNoti="$(echo aHR0cDovL21haWxpbmcuaXRjb21tLm14L3N1YnNjcmliZQo= | base64 -d 2>/dev/null || true)"
 fScriptLocal="$0"
 
@@ -93,27 +93,29 @@ LogMsg() {
 # Rutina para texto alineado (izquierda, centro, derecha)
 ImprimeLineaAlineada() {
     local sAlineacion="$1" sCaracter="$2" nLargo="$3" sMensaje="${4:-}"
-    local nLargoMsg=${#sMensaje} sLinea=""
+    local nLargoMsg=${#sMensaje}
+    local sLinea=""
     if [[ "$nLargoMsg" -ge "$nLargo" ]]; then
         sLinea="${sMensaje:0:$nLargo}"
     else
         local nRelleno=$((nLargo - nLargoMsg))
         case "$sAlineacion" in
-            i) 
+            i)
                 sLinea="${sMensaje}$(printf "%0.s$sCaracter" $(seq 1 $nRelleno))"
-            ;;
-            d) 
+                ;;
+            d)
                 sLinea="$(printf "%0.s$sCaracter" $(seq 1 $nRelleno))${sMensaje}"
-            ;;
+                ;;
             c|*)
                 local nPreFill=$((nRelleno / 2))
                 local nPostFill=$((nRelleno - nPreFill))
                 sLinea="$(printf "%0.s$sCaracter" $(seq 1 $nPreFill))${sMensaje}$(printf "%0.s$sCaracter" $(seq 1 $nPostFill))"
-            ;;
+                ;;
         esac
     fi
     echo -e "$sLinea"
 } #ImprimeLineaAlineada
+
 #######################################################################
 # Mostrar la ayuda de la herramienta
 AsciiArt() {
@@ -160,86 +162,67 @@ MostrarAyuda() {
 } #MostrarAyuda
 
 #######################################################################
-# Gestionar las actualizaciones
+# Gestionar las actualizaciones (lectura directa desde RAW)
 CheckUpdate() {
-    # Obtener JSON release
-    local sJsonRelease sUrlAsset sRemoteDate
-    sJsonRelease="$(curl -fsSL --max-time 6 "${fApiReleases}" 2>/dev/null || true)"
-    if [[ -z "$sJsonRelease" ]]; then
-        LogMsg UPDATE "No se pudo validar si hay una actualización de esta herramienta (falló conexión a GitHub)."
-        return 0
-    fi
-    # Extraer URL asset ViDoP.sh
-    sUrlAsset="$(echo "$sJsonRelease" | jq -r '.assets[] | select(.name=="ViDoP.sh") | .browser_download_url' 2>/dev/null | head -1)"
-    if [[ -z "$sUrlAsset" || "$sUrlAsset" == "null" ]]; then
-        LogMsg UPDATE "No se encontró esta herramienta en la última release. Avísale al autor por favor."
-        return 0
-    fi
-    # Solamente obtenemos el LastUpdate REMOTO (no descargar archivo todavía)
-    sRemoteDate="$(curl -fsSL --max-time 6 "$sUrlAsset" 2>/dev/null | head -20 | grep -m1 '^# LastUpdate:' | awk '{print $3}')"
+    LogMsg UPDATE "Verificando actualización contra script directo RAW..."
+    LogMsg INFO "Leyendo raw desde ${fRawScript}"
+    local sRemoteDate
+    sRemoteDate="$(curl -fsSL --max-time 12 "${fRawScript}" 2>/dev/null | head -20 | grep -m1 '^# LastUpdate:' | awk '{print $3}')"
     if [[ -z "$sRemoteDate" ]]; then
-        LogMsg UPDATE "No se pudo leer el marcador de versión en el asset remoto."
-        return 0
+        LogMsg UPDATE "No se pudo leer el LastUpdate remoto desde el script raw (${fRawScript})."
+        return 2
     fi
+    LogMsg INFO "LastUpdate remoto: $sRemoteDate || Local: $LastUpdate"
     if [[ "$sRemoteDate" != "$LastUpdate" ]]; then
-        LogMsg UPDATE "Hay una nueva versión de esta herramienta (${sRemoteDate}):"
-        LogMsg UPDATE "Ejecuta la herramienta con -a para actualizar automáticamente."
-        export VSCRIPT_NEW_URL="$sUrlAsset"
+        LogMsg UPDATE "¡Hay NUEVA VERSIÓN! ($sRemoteDate). Ejecuta con -a para actualizar."
+        export VSCRIPT_NEW_URL="$fRawScript"
         export VSCRIPT_NEW_LU="$sRemoteDate"
         return 1
     else
-        LogMsg INFO "Tienes la última versión de esta herramienta."
+        LogMsg OK "Tu herramienta está AL DÍA. (LastUpdate igual: $LastUpdate)"
         return 0
     fi
 } #CheckUpdate
 
 AutoActualizar() {
-    # Obtener JSON releases y asset, como en CheckUpdate
-    local sJsonRelease sUrlAsset sRemoteDate
-    sJsonRelease="$(curl -fsSL --max-time 6 "${fApiReleases}" 2>/dev/null || true)"
-    if [[ -z "$sJsonRelease" ]]; then
-        LogMsg ERROR "Imposible conectar a GitHub Releases, no hay Internet o problemas de conexión."
-        exit 2
+    if [[ -z "$VSCRIPT_NEW_URL" ]]; then
+        LogMsg ERROR "No se detectó URL de nueva versión. Ejecuta primero CheckUpdate."
+        return 1
     fi
-    sUrlAsset="$(echo "$sJsonRelease" | jq -r '.assets[] | select(.name=="ViDoP.sh") | .browser_download_url' 2>/dev/null | head -1)"
-    if [[ -z "$sUrlAsset" || "$sUrlAsset" == "null" ]]; then
-        LogMsg ERROR "No se encontró esta herramienta en la última release. Avísale al autor por favor."
-        exit 2
-    fi
-
-    local dScriptDir="$(cd "$(dirname -- "$0")" && pwd)"
+    local dScriptDir
+    dScriptDir="$(cd "$(dirname -- "$0")" && pwd)"
     local fTmpNew="${dScriptDir}/ViDoP.sh.itcomm"
 
-    LogMsg UPDATE "Descargando nueva versión a $fTmpNew ..."
-    if ! curl -fsSL --max-time 10 -o "$fTmpNew" "$sUrlAsset"; then
-        LogMsg ERROR "No fue posible descargar la nueva versión. Conservando la actual."
+    LogMsg UPDATE "Descargando nueva versión del script a $fTmpNew"
+    if ! curl -fsSL --max-time 20 -o "$fTmpNew" "$VSCRIPT_NEW_URL"; then
+        LogMsg ERROR "ERROR de descarga. Revisa conexión, permisos o URL."
         [[ -f "$fTmpNew" ]] && rm -f "$fTmpNew"
-        exit 2
+        return 1
     fi
-
     local sNewUpdate
     sNewUpdate="$(grep -m1 '^# LastUpdate:' "$fTmpNew" | awk '{print $3}')"
+    LogMsg UPDATE "Marcador en descargado: $sNewUpdate"
     if [[ -z "$sNewUpdate" ]]; then
-        LogMsg ERROR "La descarga fue incompleta o corrupta. No se detectó marcador de nueva versión en la herramienta descargada."
+        LogMsg ERROR "No se encontró LastUpdate en el script descargado."
         rm -f "$fTmpNew"
-        exit 2
+        return 1
     fi
     if [[ "$sNewUpdate" == "$LastUpdate" ]]; then
-        LogMsg INFO "Tienes la última versión de esta herramienta."
+        LogMsg OK "Ya tienes la última versión."
         rm -f "$fTmpNew"
-        exit 0
+        return 0
     fi
 
     # Reemplazo de la herramienta actual, con seguridad
     local fScriptActivo="${dScriptDir}/$(basename -- "$0")"
-    LogMsg UPDATE "Sustituyendo la herramienta actual: $fScriptActivo por la actualizada ..."
+    LogMsg UPDATE "Sustituyendo la herramienta actual por la nueva versión..."
     if cp -f "$fTmpNew" "$fScriptActivo"; then
         chmod +x "$fScriptActivo"
         rm -f "$fTmpNew"
         LogMsg OK "¡Actualización exitosa! Por favor vuelve a ejecutar la herramienta."
         exit 0
     else
-        LogMsg ERROR "No fue posible reemplazar la herramienta. Por seguridad se conserva la anterior."
+        LogMsg ERROR "No fue posible reemplazar la herramienta. Se conserva la anterior."
         rm -f "$fTmpNew"
         exit 2
     fi
@@ -410,13 +393,6 @@ if [[ -n "${nNumFrames}" ]]; then
             LogMsg OK "Creada la subcarpeta: ${sNomUnico}"
         fi
     done
-    # ¿No hay "nuevos" pero existen videos (video individual)? metelos al array 
-    #if [[ ${#aVideosNuevos[@]} -eq 0 ]]; then
-     #   for fArchivo in "${aArchivosDespues[@]}"; do
-      #      aVideosNuevos+=("$fArchivo")
-      #  done
-    #fi
-    #
     for fVideoArchivo in "${aVideosNuevos[@]}"; do
         LogMsg INFO "Intentando extraer frames del archivo: ${fVideoArchivo}"
         sNomUnico="$(echo "${fVideoArchivo:0:20}" | sed 's/[^A-Za-z0-9._-]/_/g' | sed 's/^[ _-]*//;s/[ _-]*$//')"   #Mismo criterio que el anterior, para la carpeta frames
@@ -532,4 +508,4 @@ fi
 # 20250803 CSV generado  en carpeta de trabajo, incluyendo encabezado y filas
 # 20250803 Listado de formatos con --list-formats si no es playlist, para info en log
 # 20250803 Agregada columna URL al CSV reportado para auditoría y postproceso OSINT
-# 20250805 Prefijo y minúsculas en .log/.csv, update GitHub releases API
+# 20250804 Actualización directa desde github raw (sin API JSON)

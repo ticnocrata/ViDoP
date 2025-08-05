@@ -1,6 +1,6 @@
 LICENCIA DE USO NO COMERCIAL CON ATRIBUCIÓN Y PARTICIPACIÓN COMERCIAL
 Nombre del Proyecto: ViDoP - Video Downloader & Processor
-Autor: Luis Ángel Ortega 
+Autor: Luis Ángel Ortega https://linkedin.com/in/ortgas   Created:   20230905
 Contacto: lortegag @t qosconsultores.com
 
 1. OBJETO DE LA LICENCIA

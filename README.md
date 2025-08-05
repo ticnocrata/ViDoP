@@ -40,7 +40,7 @@ chmod +x /usr/local/bin/vidop
 ```bash
 vidop -u "https://www.youtube.com/watch?v=XXXXXX"
 
-consulte vidop -h para la ayuda
+consulte vidop -h para ayuda detallada
 ```
 
 ---
