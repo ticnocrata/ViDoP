@@ -1,0 +1,37 @@
+LICENCIA DE USO NO COMERCIAL CON ATRIBUCIÓN Y PARTICIPACIÓN COMERCIAL
+Nombre del Proyecto: ViDoP - Video Downloader & Processor
+Autor: Luis Ángel Ortega 
+Contacto: lortegag @t qosconsultores.com
+
+1. OBJETO DE LA LICENCIA
+Se concede permiso para usar, copiar, modificar y redistribuir este software con las siguientes condiciones.
+
+2. USO PERSONAL Y NO COMERCIAL
+El código fuente de ViDoP puede ser utilizado libremente con fines personales, educativos o de investigación,
+siempre que:
+   a. Se mantenga esta licencia en todos los archivos derivados.
+   b. Se otorgue la atribución al autor original de forma visible:
+      "Basado en ViDoP de Luis Ángel Ortega Gasca – https://github.com/ticnocrata/ViDoP"
+
+3. USO COMERCIAL
+Cualquier uso del código, total o parcial, en productos, servicios, sistemas, plataformas web,
+contenido audiovisual o cualquier otro medio con fines de lucro (directos o indirectos) requiere la
+adquisición previa de una licencia comercial con el autor.
+
+4. DISTRIBUCIÓN
+Está permitida la redistribución del software bajo los mismos términos no comerciales,
+manteniendo esta licencia y el reconocimiento al autor.
+
+5. SANCIONES
+El uso comercial no autorizado será considerado como una violación a los derechos de autor y puede
+ser perseguido legalmente conforme a la legislación aplicable en materia de propiedad intelectual.
+
+6. SOLICITUD DE LICENCIA COMERCIAL
+Para obtener una licencia comercial, por favor contacta directamente al autor en:
+   lortegag -at- qosconsultores.com
+
+7. COMPATIBILIDAD
+Esta licencia está inspirada en los principios del modelo Faircode y la cláusula Commons Clause.
+No es compatible con licencias permisivas como MIT, Apache o GPL sin aprobación expresa del autor.
+
+© 2025 Luis Ángel Ortega. Todos los derechos reservados.
