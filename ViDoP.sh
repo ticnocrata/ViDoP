@@ -233,10 +233,10 @@ AutoActualizar() {
     echo -e "${aCL['byellow']}¡No necesito café ni cerveza 😉 solo darte gracias por usar esta herramienta y seguir las novedades!${aCL['noColor']}\n"
     
     echo -en  "Nombre completo ${aCL['byellow']}<Full Name>${aCL['noColor']}?> "
-    read -rp sNombreUsuario
+    read -rp "" sNombreUsuario
     while true; do
         echo -en "Indica tu correo para nuevas herramientas y actualizaciones ${aCL['byellow']}<e-mail>?${aCL['noColor']}> "
-        read -rp sCorreoUsuario
+        read -rp "" sCorreoUsuario
         if [[ "${sCorreoUsuario}" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
             break
         else
