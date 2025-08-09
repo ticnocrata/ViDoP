@@ -5,8 +5,8 @@
 # Proyecto: https://github.com/ticnocrata/ViDoP
 # Esta herramienta puede ser USADA y MODIFICADA para fines personales o no comerciales.
 # Para uso con fines de lucro, se requiere licencia comercial del autor.
-# LastUpdate: 20250805v1.3
-LastUpdate="20250805v1.3"
+# LastUpdate: 20250805v1.2
+LastUpdate="20250805v1.2"
 
 #set -e
 set +m
@@ -31,6 +31,32 @@ if ! [ -t 1 ]; then
        aCL["${sColorClave}"]=""
     done
 fi
+
+#######################################################################
+# Rutina de registro para el log y para la pantalla.
+LogMsg() {
+    local sTipo="$1" sMsg="$*"
+    local sColor sPrefix
+    case "${sTipo}" in
+        INFO)   sColor="${aCL['bblue']}";       sPrefix="[INFO]       ";;
+        OK)     sColor="${aCL['bgreen']}";      sPrefix="[OK]         ";;
+        ERROR)  sColor="${aCL['bred']}";        sPrefix="[ERROR]      ";;
+        KILL)   sColor="${aCL['byellow']}";     sPrefix="[KILL]       ";;
+        TREE)   sColor="${aCL['bcyan']}";       sPrefix="[TREE]       ";;
+        WARN)   sColor="${aCL['alert']}";       sPrefix="[WARN]       ";;
+        UPDATE) sColor="${aCL['bmagenta']}";    sPrefix="[UPDATE]     ";;
+        *)      sColor="${aCL['bwhite']}";      sPrefix="[MSG]        ";;
+    esac
+    local sTS="[$(date '+%Y-%m-%d %H:%M:%S')]"
+    echo -e "${sColor}${sTS} ${sPrefix}${sMsg}${aCL['noColor']}"
+    if [[ -n "${fArchivoLog}" && -n "${fDirectorioDescarga}" ]]; then
+        local fDirParent
+        fDirParent="$(dirname -- "${fArchivoLog}")"
+        if [[ -d "${fDirectorioDescarga}" && -d "${fDirParent}" ]]; then
+            echo -e "${sTS} ${sPrefix}${sMsg}" >> "${fArchivoLog}"
+        fi
+    fi
+} #LogMsg
 
 #######################################################################
 # Validación de dependencias externas indispensables para que funcione esta herramienta
@@ -83,32 +109,6 @@ sDirectorioOriginal="$(pwd)"
 fRawScr="$(echo aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3RpY25vY3JhdGEvVmlEb1AvbWFpbi9WaURvUC5zaA== | base64 -d 2>/dev/null || true)"
 uNoti="$(echo aHR0cDovL21haWxpbmcuaXRjb21tLm14L3N1YnNjcmliZQo= | base64 -d 2>/dev/null || true)"
 fScriptLocal="$0"
-
-#######################################################################
-# Rutina de registro para el log y para la pantalla.
-LogMsg() {
-    local sTipo="$1" sMsg="$*"
-    local sColor sPrefix
-    case "${sTipo}" in
-        INFO)   sColor="${aCL['bblue']}";       sPrefix="[INFO]       ";;
-        OK)     sColor="${aCL['bgreen']}";      sPrefix="[OK]         ";;
-        ERROR)  sColor="${aCL['bred']}";        sPrefix="[ERROR]      ";;
-        KILL)   sColor="${aCL['byellow']}";     sPrefix="[KILL]       ";;
-        TREE)   sColor="${aCL['bcyan']}";       sPrefix="[TREE]       ";;
-        WARN)   sColor="${aCL['alert']}";       sPrefix="[WARN]       ";;
-        UPDATE) sColor="${aCL['bmagenta']}";    sPrefix="[UPDATE]     ";;
-        *)      sColor="${aCL['bwhite']}";      sPrefix="[MSG]        ";;
-    esac
-    local sTS="[$(date '+%Y-%m-%d %H:%M:%S')]"
-    echo -e "${sColor}${sTS} ${sPrefix}${sMsg}${aCL['noColor']}"
-    if [[ -n "${fArchivoLog}" && -n "${fDirectorioDescarga}" ]]; then
-        local fDirParent
-        fDirParent="$(dirname -- "${fArchivoLog}")"
-        if [[ -d "${fDirectorioDescarga}" && -d "${fDirParent}" ]]; then
-            echo -e "${sTS} ${sPrefix}${sMsg}" >> "${fArchivoLog}"
-        fi
-    fi
-} #LogMsg
 
 #######################################################################
 # Rutina para texto alineado (izquierda, centro, derecha)
@@ -521,3 +521,6 @@ fi
 # 20250803 Agregada columna URL al CSV reportado para auditoría y postproceso OSINT
 # 20250804 Verificacion de versiones desde github raw (sin API JSON)
 # 20250805 Cambio para  actualización por git clone temporal único
+
+
+
