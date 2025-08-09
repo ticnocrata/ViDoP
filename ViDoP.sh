@@ -35,19 +35,20 @@ fi
 #######################################################################
 # Validación de dependencias externas indispensables para que funcione esta herramienta
 aDependenciasReq=(yt-dlp ffmpeg jq curl base64 git)
-local sResp sNombre
+bAceptaTodo=0
 for sDependencia in "${aDependenciasReq[@]}"; do
+    sNombre="${sDependencia}"   # <---- ASIGNAR EL NOMBRE AQUÍ
     if ! command -v "${sDependencia}" >/dev/null 2>&1; then
         echo -e "${aCL['alert']}Falta dependencia requerida: ${sDependencia}${aCL['noColor']}"
         if [[ "${bAceptaTodo}" -eq 0 ]]; then
-		read -rp "[UPDATE] ¿Instalar ${sNombre}? (y=si / n=no / a=aceptar todas): " sResp
-		case "${sResp}" in
-		    a|A) bAceptaTodo=1 ;;
-		    y|Y) ;;
-		    n|N) LogMsg ERROR "No se puede continuar sin ${sNombre}"; exit 2 ;;
-		    *)   LogMsg WARN "Respuesta inválida. Repite."; sNombre="${sNombre}"; continue ;;
-		esac
-	fi
+            read -rp "[UPDATE] ¿Instalar ${sNombre}? (y=si / n=no / a=aceptar todas): " sResp
+            case "${sResp}" in
+                a|A) bAceptaTodo=1 ;;
+                y|Y) ;;
+                n|N) LogMsg ERROR "No se puede continuar sin ${sNombre}"; exit 2 ;;
+                *)   LogMsg WARN "Respuesta inválida. Repite."; continue ;;
+            esac
+        fi
         case "${sNombre}" in
                 git)     bash -c "apt-get update && apt-get install -y git" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
                 yt-dlp)  bash -c "pip install -U yt-dlp || apt-get install -y yt-dlp" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
