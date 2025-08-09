@@ -1,12 +1,11 @@
-#!/bin/bash
 # ViDoP - Video Downloader & Processor
 # (c) 2025    Luis Ángel Ortega      https://linkedin.com/in/ortgas      https://github.com/ticnocrata      Created:   20230905
 # Licencia: Uso no comercial con atribución y participación comercial (ver LICENSE.txt)
 # Proyecto: https://github.com/ticnocrata/ViDoP
 # Esta herramienta puede ser USADA y MODIFICADA para fines personales o no comerciales.
 # Para uso con fines de lucro, se requiere licencia comercial del autor.
-# LastUpdate: 20250805v2.1b
-LastUpdate="20250805v2.1b"
+# LastUpdate: 20250805v2.1c
+LastUpdate="20250805v2.1c"
 
 #set -e
 set +m
@@ -85,14 +84,19 @@ ImprimeLineaAlineada() {
 
 #######################################################################
 # Segundo arte ASCII para mostrar en actualización
-AsciiArt2 () { 
+AsciiArt2() {
     echo -e ""
-    echo -e "${aCL[bwhite]}   ;)(;${aCL[noColor]}";
-    echo -e "${aCL[bwhite]}  :----:${aCL[noColor]}    ${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}O${aCL[bgreen]}o${aCL[noColor]}/     ${aCL[bblue]}╔══╗${aCL[noColor]}                ┈┈${aCL[byellow]}┏${aCL[bblue]}━╮${aCL[noColor]}";
-    echo -e "${aCL[cwhite]} C|${aCL[byellow]}====${aCL[cwhite]}|${aCL[noColor]}  ${aCL[bgreen]} .${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}O${aCL[bgreen]} .${aCL[noColor]}   ${aCL[bblue]}╚╗╔╝${aCL[noColor]}                ┈${aCL[byellow]}▉╯${aCL[bblue]}┈┗━━╮${aCL[noColor]}";
-    echo -e "${aCL[cwhite]}  |    |  \\${aCL[byellow]}========${aCL[cwhite]}/${aCL[noColor]}  ${aCL[bblue]}╔╝${aCL[bred]})(¯\`v´¯)${aCL[bblue]}${aCL[noColor]}           ┈${aCL[byellow]}▉${aCL[bblue]}┈┈┈┈┈┃${aCL[noColor]}";
-    echo -e "${aCL[cwhite]}  \`----'   \`-------'  ${aCL[bblue]}╚══${aCL[bred]}\`.¸.${aCL[ccyan]}[${aCL[bmagenta]}Freeware${aCL[ccyan]}]${aCL[noColor]}   ┈${aCL[byellow]}▉${aCL[bblue]}╰━━━━╯${aCL[noColor]}"
-    echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo -e "${aCL[bwhite]}   ;)(;${aCL[noColor]}"
+    echo -e "${aCL[bwhite]}  :----:${aCL[noColor]}   ${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}O${aCL[bgreen]}o${aCL[noColor]}/     ${aCL[bblue]}╔══╗${aCL[noColor]}               ┈┈${aCL[byellow]}┏${aCL[bblue]}━╮${aCL[noColor]}"
+    echo -e "${aCL[cwhite]} C|${aCL[byellow]}====${aCL[cwhite]}|${aCL[noColor]} ${aCL[bgreen]} .${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}O${aCL[bcyan]}o${aCL[bgreen]}.${aCL[noColor]}   ${aCL[bblue]}╚╗╔╝${aCL[noColor]}               ┈${aCL[byellow]}▉╯${aCL[bblue]}┈┗━━╮${aCL[noColor]}"
+    #Linea complicada por las secuencias
+    echo -en "${aCL[cwhite]}  |    | "
+    echo -en "\\"
+    echo -en "${aCL[byellow]}========"
+    echo -en "${aCL[cwhite]}/${aCL[bblue]}  ╔╝${aCL[bred]}(¯\`v´¯)${aCL[bblue]}${aCL[noColor]}          ┈${aCL[byellow]}▉${aCL[bblue]}┈┈┈┈┈┃${aCL[noColor]}\n"
+    #Ultima linea
+    echo -e "${aCL[cwhite]}  \`----'  \`-------'  ${aCL[bblue]}╚══${aCL[bred]}\`.¸.${aCL[ccyan]}[${aCL[bmagenta]}Freeware${aCL[ccyan]}]${aCL[noColor]}  ┈${aCL[byellow]}▉${aCL[bblue]}╰━━━━╯${aCL[noColor]}"
+    echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 } #AsciiArt2
 
 #######################################################################
@@ -109,6 +113,7 @@ bError=0
 bEsPlaylist=0
 bSubs=0
 bAutoActualizar=0
+bVerbose=0
 nNumFrames=""
 fArchivoLog=""
 fDirectorioDescarga=""
@@ -232,21 +237,33 @@ AutoActualizar() {
 
     read -rp "¿Cuál es tu nombre completo (Full Name)? > " sNombreUsuario
     while true; do
-        read -rp "Indica tu correo para estar en contacto (e-mail)?> " sCorreoUsuario
+        read -rp "Indica tu correo para nuevas herramientas y actualizaciones (e-mail)?> " sCorreoUsuario
         if [[ "${sCorreoUsuario}" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
             break
         else
             echo -e "${aCL['alert']}El correo no es válido. Intenta de nuevo.${aCL['noColor']}"
         fi
     done
-
+        
     sUrlSus="${uData}&name=${sNombreUsuario}&email=${sCorreoUsuario}"   
-    sResp=$(curl -X POST  -H "Content-Type: application/x-www-form-urlencoded"  -L -d "$sUrlSus" ${uNoti} 2>/dev/null) 
-    LogMsg INFO  "sResp: [$sResp]  \nsUrlSus: [$sUrlSus]  \nuNoti: [$uNoti]"
+    sResp=$(curl -X POST  -H "Content-Type: application/x-www-form-urlencoded"  -L -d "$sUrlSus" ${uNoti} 2>/dev/null)
+    
+    if [[ "${bVerbose}" -eq 1 ]]; then
+          LogMsg INFO  "sResp: [$sResp]  \nsUrlSus: [$sUrlSus]  \nuNoti: [$uNoti]"
+    else
+          LogMsg INFO  "sResp: [$sResp] "
+    fi
 
     if [[ "$sResp" =~ "1" || "$sResp" =~ "Already subscribed." ]]; then
-        LogMsg OK "Gracias por seguir usando esta herramienta ${sNombreUsuario}."
-        echo -e "${aCL[bgreen]}Anotado.${aCL[noColor]}"
+        LogMsg OK "${sNombreUsuario}, gracias por seguir usando esta herramienta."
+        echo -e "${aCL[bgreen]}Estás anotado.${aCL[noColor]}"
+        if [[ "${bVerbose}" ]]; then
+            if [[ "$sResp" =~ "Already subscribed." ]]; then
+                LogMsg UPDATE "Gracias por seguir siendo un usuario recurrente con el correo ${sCorreoUsuario}"
+            else
+                LogMsg UPDATE "Se registró por primera vez a [${sNombreUsuario}]con el correo [${sCorreoUsuario}]"
+            fi
+        fi
     else
         if [[ "$sResp" =~ "Bounced email address." ]]; then
             LogMsg ERROR "No pude anotarte: BEM, $sResp"
@@ -262,7 +279,12 @@ AutoActualizar() {
         fi
     fi    
 
-    LogMsg UPDATE "Bajando la actualización el repositorio oficial a ${sTmpDir}"
+    if [[ "${bVerbose}" -eq 1 ]]; then
+          LogMsg UPDATE "Bajando la actualización del repositorio ${sRepoGit} a ${sTmpDir}"          
+    else
+          LogMsg UPDATE "Bajando la actualización del repositorio oficial a ${sTmpDir}"
+    fi
+    
     if [[ -n "${fArchivoLog}" && -f "${fArchivoLog}" ]]; then
         git clone --depth=2 "${sRepoGit}" "${sTmpDir}" 2>&1 | tee -a "${fArchivoLog}"
     else
@@ -282,6 +304,13 @@ AutoActualizar() {
     fi
 
     LogMsg UPDATE "Sustituyendo la herramienta actual (${fScriptActivo}) por la nueva versión ..."
+    
+    if [[ "${bVerbose}" -eq 1 ]]; then
+          LogMsg INFO  "sResp: [$sResp]  \nsUrlSus: [$sUrlSus]  \nuNoti: [$uNoti]"
+    else
+          LogMsg INFO  "sResp: [$sResp] "
+    fi
+    
     if cp -f "${fRepoScript}" "${fScriptActivo}"; then
         chmod +x "${fScriptActivo}"
         rm -rf "${sTmpDir}"
@@ -320,6 +349,9 @@ while [[ $# -gt 0 ]]; do
             ;;
         -a|--actualizar)
             bAutoActualizar=1; shift
+            ;;
+        -v|--verbose)
+            bVerbose=1; shift
             ;;
         -h|--help)
             MostrarAyuda
@@ -552,17 +584,15 @@ fi
 # ChangeLog. Cambios relevantes:
 # 20250701 Colores en la ayuda, error parpadeante y resumen tabular final amigable
 # 20250701 Mnemonicos de color homogéneos
-# 20250725 Manejo de -s/--seccion y parámetros robusto
-# 20250826 Descarga siempre real; resumen sólo con archivos descargados
-# 20250827 Nuevo parámetro --st/--subs para obtenerlos si estan disponibles en archivos .srt externos, idioma configurable
+# 20250725 Manejo de -s/--seccion para porciones del video 
+# 20250726 Nuevo parámetro --st/--subs para obtenerlos si estan disponibles en archivos .srt externos, idioma configurable
 # 20250801 Log siempre con timestamps y progreso incluído, ubicado en la carpeta de los archivos descargados
 # 20250801 Resumen avanzado: videos/audios descargados, errores, ubicación, frames extraídos y cantidad de subtítulos
-# 20250801 Aviso proactivo de nueva versión, sólo con -a/--actualizar. Validación/filtro avanzado y robustez de frame extraction (find)
+# 20250801 Aviso proactivo de nueva versión, sólo con -a/--actualizar. Validación/filtro de parametros
 # 20250802 Detectar el tipo de archivo (audio/video) con el archivo físico, no por la metadata del JSON
-# 20250803 Corrección: conteo y tablas trabajan siempre en la carpeta de trabajo
+# 20250803 Corrección: conteo y tablas trabajar siempre situado en la carpeta de trabajo
 # 20250803 CSV generado en carpeta de trabajo, incluyendo encabezado y filas
 # 20250803 Listado de formatos con --list-formats si no es playlist, para info en log
 # 20250803 Agregada columna URL al CSV reportado para auditoría y postproceso OSINT
-# 20250804 Verificacion de versiones desde github raw (sin API JSON)
-# 20250805 Cambio para actualización por git clone temporal único, manejo seguro de log en update
-# 20250805 Integra arte y suscripcion en update
+# 20250804 Verificacion de versiones desde github raw (sin API JSON) y actualización por git temporal en directorio único
+# 20250805 Integra arte y notificaciones de nuevas herramientas en update
