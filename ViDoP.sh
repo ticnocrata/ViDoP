@@ -232,7 +232,7 @@ AutoActualizar() {
     echo -e "${aCL['bblue']}No need for coffee or beer 😉 just say you thanks for using this tool and staying up to date!${aCL['noColor']}"
     echo -e "${aCL['byellow']}¡No necesito café ni cerveza 😉 solo darte gracias por usar esta herramienta y seguir las novedades!${aCL['noColor']}\n"
     
-    read -rp "¿Cuál es tu nombre completo (Full Name)? > " sNombreUsuario
+    read -rp "¿Cuál es tu nombre completo (Full Name)?> " sNombreUsuario
     while true; do
         read -rp "Indica tu correo para nuevas herramientas y actualizaciones (e-mail)?> " sCorreoUsuario
         if [[ "${sCorreoUsuario}" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
