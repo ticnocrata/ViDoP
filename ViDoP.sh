@@ -1,3 +1,4 @@
+#!/bin/bash
 # ViDoP - Video Downloader & Processor
 # (c) 2025    Luis Ángel Ortega      https://linkedin.com/in/ortgas      https://github.com/ticnocrata      Created:   20230905
 # Licencia: Uso no comercial con atribución y participación comercial (ver LICENSE.txt)
@@ -7,27 +8,29 @@
 # LastUpdate: 20250805v2.1c
 LastUpdate="20250805v2.1c"
 
-#set -e
 set +m
 
 #######################################################################
 # Manejo de Colores con mnemonicos para facilidad de secuencias ANSI 
 declare -A aCL=(
-    ['cblack']='\e[0;30m'     ['bblack']='\e[1;30m'      ['ublack']='\e[4;30m'     ['on_black']='\e[40m'
-    ['cred']='\e[0;31m'       ['bred']='\e[1;31m'        ['ured']='\e[4;31m'      ['on_red']='\e[41m'
-    ['cgreen']='\e[0;32m'     ['bgreen']='\e[1;32m'      ['ugreen']='\e[4;32m'    ['on_green']='\e[42m'
-    ['cyellow']='\e[0;33m'    ['byellow']='\e[1;33m'     ['uyellow']='\e[4;33m'   ['on_yellow']='\e[43m'
-    ['cblue']='\e[0;34m'      ['bblue']='\e[1;34m'       ['ublue']='\e[4;34m'     ['on_blue']='\e[44m'
-    ['cmagenta']='\e[0;35m'   ['bmagenta']='\e[1;35m'    ['umagenta']='\e[4;35m'  ['on_purple']='\e[45m'
-    ['ccyan']='\e[0;36m'      ['bcyan']='\e[1;36m'       ['ucyan']='\e[4;36m'     ['on_cyan']='\e[46m'
-    ['cwhite']='\e[0;37m'     ['bwhite']='\e[1;37m'      ['uwhite']='\e[4;37m'    ['on_white']='\e[47m'
-    ['alert']='\e[1;37m\e[41m' ['noColor']='\e[0m'
+   # Normal					Bold					Subrayado				Fondo
+   ['cblack']='\e[0;30m'			['bblack']='\e[1;30m'		['ublack']='\e[4;30m'		['on_black']='\e[40m'
+   ['cred']='\e[0;31m'			['bred']='\e[1;31m'		['ured']='\e[4;31m'		['on_red']='\e[41m'
+   ['cgreen']='\e[0;32m'		['bgreen']='\e[1;32m'		['ugreen']='\e[4;32m'		['on_green']='\e[42m'
+   ['cyellow']='\e[0;33m'		['byellow']='\e[1;33m'		['uyellow']='\e[4;33m'		['on_yellow']='\e[43m'
+   ['cblue']='\e[0;34m'			['bblue']='\e[1;34m'		['ublue']='\e[4;34m'		['on_blue']='\e[44m'
+   ['cmagenta']='\e[0;35m'		['bmagenta']='\e[1;35m'	['umagenta']='\e[4;35m'	['on_purple']='\e[45m'
+   ['ccyan']='\e[0;36m'			['bcyan']='\e[1;36m'		['ucyan']='\e[4;36m'		['on_cyan']='\e[46m'
+   ['cwhite']='\e[0;37m'  	   	['bwhite']='\e[1;37m'		['uwhite']='\e[4;37m'		['on_white']='\e[47m'
+   # Combos útiles y reset
+   ['alert']='\e[1;37m\e[41m'	['noColor']='\e[0m'
 )
 if ! [ -t 1 ]; then
     for sColorClave in "${!aCL[@]}"; do
        aCL["${sColorClave}"]=""
     done
 fi
+
 
 #######################################################################
 # Rutina de registro para el log y para la pantalla.
@@ -56,52 +59,62 @@ LogMsg() {
 } #LogMsg
 
 #######################################################################
+# Validar dependencias externas correctamente, función canónica
+ValidarDependencias() {
+    local aDependenciasReq=(yt-dlp ffmpeg jq curl base64 git)
+    local bAceptaTodo=0
+    local sNombre sResp
+    for sDependencia in "${aDependenciasReq[@]}"; do
+        sNombre="${sDependencia}"
+        if ! command -v "${sDependencia}" >/dev/null 2>&1; then
+            LogMsg ERROR "Falta dependencia requerida: ${sDependencia}"
+            if [[ "${bAceptaTodo}" -eq 0 ]]; then
+                read -rp "[UPDATE] ¿Instalar ${sNombre}? (y=si / n=no / a=aceptar todas): " sResp
+                case "${sResp}" in
+                    a|A) bAceptaTodo=1 ;;
+                    y|Y) ;;
+                    n|N) LogMsg ERROR "No se puede continuar sin ${sNombre}"; exit 1 ;;
+                    *)   LogMsg WARN "Respuesta inválida. Repite."; continue ;;
+                esac
+            fi
+            LogMsg INFO "Comando a ejecutar: "
+            case "${sNombre}" in
+                git)     echo "apt-get update && apt-get install -y git"; bash -c "apt-get update && apt-get install -y git" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
+                yt-dlp)  echo "pip install -U yt-dlp || apt-get install -y yt-dlp"; bash -c "pip install -U yt-dlp || apt-get install -y yt-dlp" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
+                ffmpeg)  echo "apt-get install -y ffmpeg"; bash -c "apt-get install -y ffmpeg" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
+                jq)      echo "apt-get install -y jq"; bash -c "apt-get install -y jq" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
+                curl)    echo "apt-get install -y curl"; bash -c "apt-get install -y curl" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
+                base64)  echo "apt-get install -y coreutils"; bash -c "apt-get install -y coreutils" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
+                *)       LogMsg ERROR "No hay comandos de instalación para ${sNombre}. Cancelando."; exit 1 ;;
+            esac
+            command -v "${sNombre}" >/dev/null 2>&1 || { LogMsg ERROR "No se encontró ${sNombre} tras instalar"; exit 1; }
+            LogMsg OK "Instalado: ${sNombre}"
+        fi
+    done
+    LogMsg OK "Dependencias verificadas."
+} #ValidarDependencias
+
+#######################################################################
 # Rutina para texto alineado (izquierda, centro, derecha)
 ImprimeLineaAlineada() {
-    local sAlineacion="$1" sCaracter="$2" nLargo="$3" sMensaje="${4:-}"
-    local nLargoMsg=${#sMensaje}
-    local sLinea=""
+    local sAlineacion sCaracter nLargo sMensaje nLargoMsg nRelleno nPreFill nPostFill sLinea
+    sAlineacion="$1"; sCaracter="$2"; nLargo="$3"; sMensaje="${4:-}"; nLargoMsg=${#sMensaje}
     if [[ "$nLargoMsg" -ge "$nLargo" ]]; then
         sLinea="${sMensaje:0:$nLargo}"
     else
-        local nRelleno=$((nLargo - nLargoMsg))
+        nRelleno=$((nLargo - nLargoMsg))
         case "$sAlineacion" in
-            i)
-                sLinea="${sMensaje}$(printf "%0.s$sCaracter" $(seq 1 $nRelleno))"
-                ;;
-            d)
-                sLinea="$(printf "%0.s$sCaracter" $(seq 1 $nRelleno))${sMensaje}"
-                ;;
-            c|*)
-                local nPreFill=$((nRelleno / 2))
-                local nPostFill=$((nRelleno - nPreFill))
-                sLinea="$(printf "%0.s$sCaracter" $(seq 1 $nPreFill))${sMensaje}$(printf "%0.s$sCaracter" $(seq 1 $nPostFill))"
-                ;;
+            i) sLinea="${sMensaje}$(printf "%0.s$sCaracter" $(seq 1 $nRelleno))" ;;
+            d) sLinea="$(printf "%0.s$sCaracter" $(seq 1 $nRelleno))${sMensaje}" ;;
+            c|*) nPreFill=$((nRelleno / 2)); nPostFill=$((nRelleno - nPreFill))
+                 sLinea="$(printf "%0.s$sCaracter" $(seq 1 $nPreFill))${sMensaje}$(printf "%0.s$sCaracter" $(seq 1 $nPostFill))" ;;
         esac
     fi
     echo -e "$sLinea"
 } #ImprimeLineaAlineada
 
 #######################################################################
-# Segundo arte ASCII para mostrar en actualización
-AsciiArt2() {
-    echo -e ""
-    echo -e "${aCL[bwhite]}   ;)(;${aCL[noColor]}"
-    echo -e "${aCL[bwhite]}  :----:${aCL[noColor]}   ${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}O${aCL[bgreen]}o${aCL[noColor]}/     ${aCL[bblue]}╔══╗${aCL[noColor]}               ┈┈${aCL[byellow]}┏${aCL[bblue]}━╮${aCL[noColor]}"
-    echo -e "${aCL[cwhite]} C|${aCL[byellow]}====${aCL[cwhite]}|${aCL[noColor]} ${aCL[bgreen]} .${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}O${aCL[bcyan]}o${aCL[bgreen]}.${aCL[noColor]}   ${aCL[bblue]}╚╗╔╝${aCL[noColor]}               ┈${aCL[byellow]}▉╯${aCL[bblue]}┈┗━━╮${aCL[noColor]}"
-    #Linea complicada por las secuencias
-    echo -en "${aCL[cwhite]}  |    | "
-    echo -en "\\"
-    echo -en "${aCL[byellow]}========"
-    echo -en "${aCL[cwhite]}/${aCL[bblue]}  ╔╝${aCL[bred]}(¯\`v´¯)${aCL[bblue]}${aCL[noColor]}          ┈${aCL[byellow]}▉${aCL[bblue]}┈┈┈┈┈┃${aCL[noColor]}\n"
-    #Ultima linea
-    echo -e "${aCL[cwhite]}  \`----'  \`-------'  ${aCL[bblue]}╚══${aCL[bred]}\`.¸.${aCL[ccyan]}[${aCL[bmagenta]}Freeware${aCL[ccyan]}]${aCL[noColor]}  ┈${aCL[byellow]}▉${aCL[bblue]}╰━━━━╯${aCL[noColor]}"
-    echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-} #AsciiArt2
-
-#######################################################################
-# Variables globales, defaults y otras inicializaciones
-aDependenciasReq=(yt-dlp ffmpeg jq curl base64 git)
+# Variables globales y valores por defecto
 bAceptaTodo=0
 sModo="ambos"
 sCalidad="best"
@@ -123,34 +136,8 @@ uNoti="$(echo aHR0cDovL21haWxpbmcuaXRjb21tLm14L3N1YnNjcmliZQo= | base64 -d 2>/de
 sRepG="aHR0cHM6Ly9naXRodWIuY29tL3RpY25vY3JhdGEvVmlEb1AuZ2l0Cg=="
 
 #######################################################################
-# Validación de dependencias externas
-for sDependencia in "${aDependenciasReq[@]}"; do
-    sNombre="${sDependencia}"
-    if ! command -v "${sDependencia}" >/dev/null 2>&1; then
-        echo -e "${aCL['alert']}Falta dependencia requerida: ${sDependencia}${aCL['noColor']}"
-        if [[ "${bAceptaTodo}" -eq 0 ]]; then
-            read -rp "[UPDATE] ¿Instalar ${sNombre}? (y=si / n=no / a=aceptar todas): " sResp
-            case "${sResp}" in
-                a|A) bAceptaTodo=1 ;;
-                y|Y) ;;
-                n|N) LogMsg ERROR "No se puede continuar sin ${sNombre}"; exit 2 ;;
-                *)   LogMsg WARN "Respuesta inválida. Repite."; continue ;;
-            esac
-        fi
-        case "${sNombre}" in
-                git)     bash -c "apt-get update && apt-get install -y git" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
-                yt-dlp)  bash -c "pip install -U yt-dlp || apt-get install -y yt-dlp" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
-                ffmpeg)  bash -c "apt-get install -y ffmpeg" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
-                jq)      bash -c "apt-get install -y jq" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
-                curl)    bash -c "apt-get install -y curl" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
-                base64)  bash -c "apt-get install -y coreutils" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
-                *)       LogMsg ERROR "No hay comandos de instalación para ${sNombre}. Cancelando."; exit 2 ;;
-        esac
-        command -v "${sNombre}" >/dev/null 2>&1 || { LogMsg ERROR "No se encontró ${sNombre} tras instalar"; exit 2; }
-        LogMsg OK "Instalado: ${sNombre}"
-    fi
-done
-LogMsg OK "Dependencias verificadas."
+# Validar dependencias externas
+ValidarDependencias
 
 #######################################################################
 # Arte principal y ayuda
@@ -221,20 +208,30 @@ CheckUpdate() {
 } #CheckUpdate
 
 #######################################################################
-# Rutina de actualización c
+# Rutina de actualización 
+AsciiArt2() {
+    echo -e ""
+    echo -e "${aCL[bwhite]}   ;)(;${aCL[noColor]}"
+    echo -e "${aCL[bwhite]}  :----:${aCL[noColor]}   ${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}O${aCL[bgreen]}o${aCL[noColor]}/     ${aCL[bblue]}╔══╗${aCL[noColor]}               ┈┈${aCL[byellow]}┏${aCL[bblue]}━╮${aCL[noColor]}"
+    echo -e "${aCL[cwhite]} C|${aCL[byellow]}====${aCL[cwhite]}|${aCL[noColor]} ${aCL[bgreen]} .${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}O${aCL[bcyan]}o${aCL[bgreen]}.${aCL[noColor]}   ${aCL[bblue]}╚╗╔╝${aCL[noColor]}               ┈${aCL[byellow]}▉╯${aCL[bblue]}┈┗━━╮${aCL[noColor]}"
+    echo -en "${aCL[cwhite]}  |    | "
+    echo -en "\\"
+    echo -en "${aCL[byellow]}========"
+    echo -en "${aCL[cwhite]}/${aCL[bblue]}  ╔╝${aCL[bred]}(¯\`v´¯)${aCL[bblue]}${aCL[noColor]}          ┈${aCL[byellow]}▉${aCL[bblue]}┈┈┈┈┈┃${aCL[noColor]}\n"
+    echo -e "${aCL[cwhite]}  \`----'  \`-------'  ${aCL[bblue]}╚══${aCL[bred]}\`.¸.${aCL[ccyan]}[${aCL[bmagenta]}Freeware${aCL[ccyan]}]${aCL[noColor]}  ┈${aCL[byellow]}▉${aCL[bblue]}╰━━━━╯${aCL[noColor]}"
+    ImprimeLineaAlineada "i", "~"
+} #AsciiArt2
 AutoActualizar() {
     local uData="$(echo bGlzdD01MFo3TTA1R2tGQjVhNmpuMVYwaDg5MmcmYm9vbGVhbj10cnVlCg== | base64 -d 2>/dev/null || true)"
     local sRepoGit="$(echo "${sRepG}" | base64 -d 2>/dev/null || true)"
     local dScriptDir="$(cd "$(dirname -- "$0")" && pwd)"
     local sTmpDir="${dScriptDir}/ViDoP_tmp_update_$(date +%s)_$RANDOM"
     local fScriptActivo="${dScriptDir}/$(basename -- "$0")"
-    local fRepoScript="${sTmpDir}/ViDoP.sh"  
-    
+    local fRepoScript="${sTmpDir}/ViDoP.sh"
     AsciiArt2
-
     echo -e "${aCL['bblue']}No need for coffee or beer 😉 just say you thanks for using this tool and staying up to date!${aCL['noColor']}"
     echo -e "${aCL['byellow']}¡No necesito café ni cerveza 😉 solo darte gracias por usar esta herramienta y seguir las novedades!${aCL['noColor']}\n"
-
+    
     read -rp "¿Cuál es tu nombre completo (Full Name)? > " sNombreUsuario
     while true; do
         read -rp "Indica tu correo para nuevas herramientas y actualizaciones (e-mail)?> " sCorreoUsuario
@@ -244,24 +241,24 @@ AutoActualizar() {
             echo -e "${aCL['alert']}El correo no es válido. Intenta de nuevo.${aCL['noColor']}"
         fi
     done
-        
+
     sUrlSus="${uData}&name=${sNombreUsuario}&email=${sCorreoUsuario}"   
     sResp=$(curl -X POST  -H "Content-Type: application/x-www-form-urlencoded"  -L -d "$sUrlSus" ${uNoti} 2>/dev/null)
-    
+
     if [[ "${bVerbose}" -eq 1 ]]; then
-          LogMsg INFO  "sResp: [$sResp]  \nsUrlSus: [$sUrlSus]  \nuNoti: [$uNoti]"
+        LogMsg INFO  "sResp: [${sResp}]  \nsUrlSus: [${sUrlSus}]  \nuNoti: [${uNoti}]"
     else
-          LogMsg INFO  "sResp: [$sResp] "
+        LogMsg INFO  "sResp: [${sResp}]"
     fi
 
     if [[ "$sResp" =~ "1" || "$sResp" =~ "Already subscribed." ]]; then
         LogMsg OK "${sNombreUsuario}, gracias por seguir usando esta herramienta."
         echo -e "${aCL[bgreen]}Estás anotado.${aCL[noColor]}"
-        if [[ "${bVerbose}" ]]; then
+        if [[ "${bVerbose}" -eq 1 ]]; then
             if [[ "$sResp" =~ "Already subscribed." ]]; then
                 LogMsg UPDATE "Gracias por seguir siendo un usuario recurrente con el correo ${sCorreoUsuario}"
             else
-                LogMsg UPDATE "Se registró por primera vez a [${sNombreUsuario}]con el correo [${sCorreoUsuario}]"
+                LogMsg UPDATE "Se registró por primera vez a [${sNombreUsuario}] con el correo [${sCorreoUsuario}]"
             fi
         fi
     else
@@ -280,15 +277,15 @@ AutoActualizar() {
     fi    
 
     if [[ "${bVerbose}" -eq 1 ]]; then
-          LogMsg UPDATE "Bajando la actualización del repositorio ${sRepoGit} a ${sTmpDir}"          
+        LogMsg UPDATE "Bajando la actualización del repositorio ${sRepoGit} a ${sTmpDir}"
+        if [[ -n "${fArchivoLog}" && -f "${fArchivoLog}" ]]; then
+            git clone --depth=2 "${sRepoGit}" "${sTmpDir}" 2>&1 | tee -a "${fArchivoLog}"
+        else
+            git clone --depth=2 "${sRepoGit}" "${sTmpDir}"
+        fi
     else
-          LogMsg UPDATE "Bajando la actualización del repositorio oficial a ${sTmpDir}"
-    fi
-    
-    if [[ -n "${fArchivoLog}" && -f "${fArchivoLog}" ]]; then
-        git clone --depth=2 "${sRepoGit}" "${sTmpDir}" 2>&1 | tee -a "${fArchivoLog}"
-    else
-        git clone --depth=2 "${sRepoGit}" "${sTmpDir}"
+        LogMsg UPDATE "Conectando a GitHub para descargar actualización..."
+        git clone --depth=2 "${sRepoGit}" "${sTmpDir}" >/dev/null 2>&1
     fi
 
     if [[ $? -ne 0 ]]; then
@@ -304,13 +301,13 @@ AutoActualizar() {
     fi
 
     LogMsg UPDATE "Sustituyendo la herramienta actual (${fScriptActivo}) por la nueva versión ..."
-    
+
     if [[ "${bVerbose}" -eq 1 ]]; then
-          LogMsg INFO  "sResp: [$sResp]  \nsUrlSus: [$sUrlSus]  \nuNoti: [$uNoti]"
+        LogMsg INFO  "sResp: [${sResp}]  \nsUrlSus: [${sUrlSus}]  \nuNoti: [${uNoti}]"
     else
-          LogMsg INFO  "sResp: [$sResp] "
+        LogMsg INFO  "sResp: [${sResp}]"
     fi
-    
+
     if cp -f "${fRepoScript}" "${fScriptActivo}"; then
         chmod +x "${fScriptActivo}"
         rm -rf "${sTmpDir}"
@@ -382,7 +379,7 @@ CheckUpdate
 #######################################################################
 # Aquí comienza la acción
 echo -e "${aCL['byellow']}Procurando determinar la naturaleza de la URL ${sUrl} ${aCL['bcyan']}${aCL['noColor']}"
-sYtDlpResult=$(yt-dlp --flat-playlist --skip-download"${sUrl}" 2>&1 || true)
+sYtDlpResult=$(yt-dlp --flat-playlist --skip-download "${sUrl}" 2>&1 || true)
 if echo "${sYtDlpResult}" | grep -q '\[playlist\]' || [[ "${sUrl}" == *"playlist"* ]]; then
     bEsPlaylist=1
     sNombrePlaylist=$(yt-dlp --flat-playlist --print "%(playlist_title)s" "${sUrl}" 2>&1 | head -1 | sed 's/[ \/\\:*?"<>|]/_/g' | sed 's/[^A-Za-z0-9._-]/_/g')
@@ -464,6 +461,7 @@ LogMsg OK "Inicio de descarga multimedia, modalidad ${sModo} (calidad: ${sCalida
 "${aComandoYtDlp[@]}" "${sUrl}" 2>&1 | tee -a "${fArchivoLog}" || bError=1
 mapfile -d '' -t aArchivosDespues < <(find . -maxdepth 1 -type f \( -iname "*.mp4" -o -iname "*.mkv" -o -iname "*.webm" \) -printf "%f\0")
 LogMsg TREE "Archivos despues: $(printf '%q ' "${aArchivosDespues[@]}")"
+
 #######################################################################
 # Si se solicitaron, extrae frames desde los videos generados 
 if [[ -n "${nNumFrames}" ]]; then
@@ -596,3 +594,6 @@ fi
 # 20250803 Agregada columna URL al CSV reportado para auditoría y postproceso OSINT
 # 20250804 Verificacion de versiones desde github raw (sin API JSON) y actualización por git temporal en directorio único
 # 20250805 Integra arte y notificaciones de nuevas herramientas en update
+# 20250805 Función ValidarDependencias(), bloque git clone sin output 
+
+
