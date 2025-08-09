@@ -5,8 +5,8 @@
 # Proyecto: https://github.com/ticnocrata/ViDoP
 # Esta herramienta puede ser USADA y MODIFICADA para fines personales o no comerciales.
 # Para uso con fines de lucro, se requiere licencia comercial del autor.
-# LastUpdate: 20250805v1.3
-LastUpdate="20250805v1.3"
+# LastUpdate: 20250805v2.1b
+LastUpdate="20250805v2.1b"
 
 #set -e
 set +m
@@ -84,7 +84,19 @@ ImprimeLineaAlineada() {
 } #ImprimeLineaAlineada
 
 #######################################################################
-# Variables globales necesarias, valores defaults y otras inicializaciones
+# Segundo arte ASCII para mostrar en actualización
+AsciiArt2 () { 
+    echo -e ""
+    echo -e "${aCL[bwhite]}   ;)(;${aCL[noColor]}";
+    echo -e "${aCL[bwhite]}  :----:${aCL[noColor]}    ${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}O${aCL[bgreen]}o${aCL[noColor]}/     ${aCL[bblue]}╔══╗${aCL[noColor]}                ┈┈${aCL[byellow]}┏${aCL[bblue]}━╮${aCL[noColor]}";
+    echo -e "${aCL[cwhite]} C|${aCL[byellow]}====${aCL[cwhite]}|${aCL[noColor]}  ${aCL[bgreen]} .${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}o${aCL[bcyan]}8${aCL[byellow]}O${aCL[bgreen]} .${aCL[noColor]}   ${aCL[bblue]}╚╗╔╝${aCL[noColor]}                ┈${aCL[byellow]}▉╯${aCL[bblue]}┈┗━━╮${aCL[noColor]}";
+    echo -e "${aCL[cwhite]}  |    |  \\${aCL[byellow]}========${aCL[cwhite]}/${aCL[noColor]}  ${aCL[bblue]}╔╝${aCL[bred]})(¯\`v´¯)${aCL[bblue]}${aCL[noColor]}           ┈${aCL[byellow]}▉${aCL[bblue]}┈┈┈┈┈┃${aCL[noColor]}";
+    echo -e "${aCL[cwhite]}  \`----'   \`-------'  ${aCL[bblue]}╚══${aCL[bred]}\`.¸.${aCL[ccyan]}[${aCL[bmagenta]}Freeware${aCL[ccyan]}]${aCL[noColor]}   ┈${aCL[byellow]}▉${aCL[bblue]}╰━━━━╯${aCL[noColor]}"
+    echo -e "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+} #AsciiArt2
+
+#######################################################################
+# Variables globales, defaults y otras inicializaciones
 aDependenciasReq=(yt-dlp ffmpeg jq curl base64 git)
 bAceptaTodo=0
 sModo="ambos"
@@ -103,11 +115,10 @@ fDirectorioDescarga=""
 sDirectorioOriginal="$(pwd)"
 fRawScr="$(echo aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3RpY25vY3JhdGEvVmlEb1AvbWFpbi9WaURvUC5zaA== | base64 -d 2>/dev/null || true)"
 uNoti="$(echo aHR0cDovL21haWxpbmcuaXRjb21tLm14L3N1YnNjcmliZQo= | base64 -d 2>/dev/null || true)"
-fScriptLocal="$0"
 sRepG="aHR0cHM6Ly9naXRodWIuY29tL3RpY25vY3JhdGEvVmlEb1AuZ2l0Cg=="
 
 #######################################################################
-# Validación de dependencias externas indispensables para que funcione esta herramienta
+# Validación de dependencias externas
 for sDependencia in "${aDependenciasReq[@]}"; do
     sNombre="${sDependencia}"
     if ! command -v "${sDependencia}" >/dev/null 2>&1; then
@@ -137,7 +148,7 @@ done
 LogMsg OK "Dependencias verificadas."
 
 #######################################################################
-# Mostrar la ayuda de la herramienta
+# Arte principal y ayuda
 AsciiArt() {
     local sBanner="${aCL['bmagenta']}" sArt="${aCL['bcyan']}" sURL="${aCL['bmagenta']}" sReset="${aCL['noColor']}" sToolName="${aCL['byellow']}"
     printf "${sBanner}(c) Luis Angel Ortega     ${sToolName}Video Downloader and Processor ${sBanner}ViDoP${sReset}\n"
@@ -182,7 +193,7 @@ MostrarAyuda() {
 } #MostrarAyuda
 
 #######################################################################
-# Gestionar las actualizaciones (lectura directa desde RAW)
+# Verificación de actualización (CheckUpdate)
 CheckUpdate() {
     LogMsg UPDATE "Verificando actualización de la herramienta en GitHub ..."
     LogMsg INFO "Leyendo raw desde ${fRawScr}"
@@ -204,42 +215,80 @@ CheckUpdate() {
     fi
 } #CheckUpdate
 
+#######################################################################
+# Rutina de actualización c
 AutoActualizar() {
-    local sRepoGit
-    sRepoGit="$(echo "${sRepG}" | base64 -d 2>/dev/null || true)"
-    local dScriptDir
-    dScriptDir="$(cd "$(dirname -- "$0")" && pwd)"
+    local uData="$(echo bGlzdD01MFo3TTA1R2tGQjVhNmpuMVYwaDg5MmcmYm9vbGVhbj10cnVlCg== | base64 -d 2>/dev/null || true)"
+    local sRepoGit="$(echo "${sRepG}" | base64 -d 2>/dev/null || true)"
+    local dScriptDir="$(cd "$(dirname -- "$0")" && pwd)"
     local sTmpDir="${dScriptDir}/ViDoP_tmp_update_$(date +%s)_$RANDOM"
     local fScriptActivo="${dScriptDir}/$(basename -- "$0")"
+    local fRepoScript="${sTmpDir}/ViDoP.sh"  
+    
+    AsciiArt2
 
-    LogMsg UPDATE "Clonando el repositorio oficial desde ${sRepoGit} a ${sTmpDir}"
-    if [[ -n "${fArchivoLog}" && -f "${fArchivoLog}" ]]; then
-        git clone --depth=1 "${sRepoGit}" "${sTmpDir}" 2>&1 | tee -a "${fArchivoLog}"
+    echo -e "${aCL['bblue']}No need for coffee or beer 😉 just say you thanks for using this tool and staying up to date!${aCL['noColor']}"
+    echo -e "${aCL['byellow']}¡No necesito café ni cerveza 😉 solo darte gracias por usar esta herramienta y seguir las novedades!${aCL['noColor']}\n"
+
+    read -rp "¿Cuál es tu nombre completo (Full Name)? > " sNombreUsuario
+    while true; do
+        read -rp "Indica tu correo para estar en contacto (e-mail)?> " sCorreoUsuario
+        if [[ "${sCorreoUsuario}" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+            break
+        else
+            echo -e "${aCL['alert']}El correo no es válido. Intenta de nuevo.${aCL['noColor']}"
+        fi
+    done
+
+    sUrlSus="${uData}&name=${sNombreUsuario}&email=${sCorreoUsuario}"   
+    sResp=$(curl -X POST  -H "Content-Type: application/x-www-form-urlencoded"  -L -d "$sUrlSus" ${uNoti} 2>/dev/null) 
+    LogMsg INFO  "sResp: [$sResp]  \nsUrlSus: [$sUrlSus]  \nuNoti: [$uNoti]"
+
+    if [[ "$sResp" =~ "1" || "$sResp" =~ "Already subscribed." ]]; then
+        LogMsg OK "Gracias por seguir usando esta herramienta ${sNombreUsuario}."
+        echo -e "${aCL[bgreen]}Anotado.${aCL[noColor]}"
     else
-        git clone --depth=1 "${sRepoGit}" "${sTmpDir}"
+        if [[ "$sResp" =~ "Bounced email address." ]]; then
+            LogMsg ERROR "No pude anotarte: BEM, $sResp"
+            echo -e "${aCL[alert]}Tu correo ha rebotado emails anteriormente, checa spam o usa otro.${aCL[noColor]}"
+        elif [[ "$sResp" =~ "Email is suppressed." ]]; then
+            LogMsg ERROR "No pude anotarte: EIS, $sResp"
+            echo -e "${aCL[alert]}Alguien solicitó anteriormente no estar anotado con este correo, usa otro.${aCL[noColor]}"
+            exit 1
+        else
+            LogMsg ERROR "No pude anotarte: $sResp"
+            echo -e "${aCL[alert]}No pude anotarte: $sResp${aCL[noColor]}"
+            exit 1
+        fi
+    fi    
+
+    LogMsg UPDATE "Bajando la actualización el repositorio oficial a ${sTmpDir}"
+    if [[ -n "${fArchivoLog}" && -f "${fArchivoLog}" ]]; then
+        git clone --depth=2 "${sRepoGit}" "${sTmpDir}" 2>&1 | tee -a "${fArchivoLog}"
+    else
+        git clone --depth=2 "${sRepoGit}" "${sTmpDir}"
     fi
 
     if [[ $? -ne 0 ]]; then
-        LogMsg ERROR "ERROR durante el git clone. Revisa conexión o permisos."
+        LogMsg ERROR "ERROR durante el git. Revisa conexión o permisos."
         [[ -d "${sTmpDir}" ]] && rm -rf "${sTmpDir}"
         return 1
     fi
 
-    local fNuevoScript="${sTmpDir}/$(basename -- "$0")"
-    if [[ ! -f "${fNuevoScript}" ]]; then
-        LogMsg ERROR "No se encontró el script a actualizar en la carpeta clonada (${fNuevoScript})"
+    if [[ ! -f "${fRepoScript}" ]]; then
+        LogMsg ERROR "No se encontró la herramienta ViDoP.sh en la carpeta descargada"
         rm -rf "${sTmpDir}"
         return 1
     fi
 
-    LogMsg UPDATE "Sustituyendo el script actual por la nueva versión desde ${fNuevoScript} ..."
-    if cp -f "${fNuevoScript}" "${fScriptActivo}"; then
+    LogMsg UPDATE "Sustituyendo la herramienta actual (${fScriptActivo}) por la nueva versión ..."
+    if cp -f "${fRepoScript}" "${fScriptActivo}"; then
         chmod +x "${fScriptActivo}"
         rm -rf "${sTmpDir}"
         LogMsg OK "¡Actualización exitosa! Por favor vuelve a ejecutar la herramienta."
         exit 0
     else
-        LogMsg ERROR "No fue posible reemplazar el script actual. Se conserva la versión anterior."
+        LogMsg ERROR "No fue posible reemplazar la version actual. Se conserva la versión anterior."
         rm -rf "${sTmpDir}"
         exit 2
     fi
@@ -299,9 +348,9 @@ fi
 CheckUpdate
 
 #######################################################################
-# Aqui comienza la acción!
+# Aquí comienza la acción
 echo -e "${aCL['byellow']}Procurando determinar la naturaleza de la URL ${sUrl} ${aCL['bcyan']}${aCL['noColor']}"
-sYtDlpResult=$(yt-dlp --flat-playlist --skip-download"${sUrl}" 2>&1 || true) #Trae info de la URL, sin descargar
+sYtDlpResult=$(yt-dlp --flat-playlist --skip-download"${sUrl}" 2>&1 || true)
 if echo "${sYtDlpResult}" | grep -q '\[playlist\]' || [[ "${sUrl}" == *"playlist"* ]]; then
     bEsPlaylist=1
     sNombrePlaylist=$(yt-dlp --flat-playlist --print "%(playlist_title)s" "${sUrl}" 2>&1 | head -1 | sed 's/[ \/\\:*?"<>|]/_/g' | sed 's/[^A-Za-z0-9._-]/_/g')
@@ -328,7 +377,7 @@ else
 fi
 
 #######################################################################
-# Validar que no pidas sección de un video (cachito) si estas procesando una playlist
+# Validar que no pidas sección de un video (cachito) si procesas una playlist
 if [[ "${bEsPlaylist}" -eq 1 && -n "${sSeccion}" ]]; then
     MostrarAyuda "No se puede usar -s/--seccion con playlists. Solo con videos individuales."
 fi
@@ -511,8 +560,9 @@ fi
 # 20250801 Aviso proactivo de nueva versión, sólo con -a/--actualizar. Validación/filtro avanzado y robustez de frame extraction (find)
 # 20250802 Detectar el tipo de archivo (audio/video) con el archivo físico, no por la metadata del JSON
 # 20250803 Corrección: conteo y tablas trabajan siempre en la carpeta de trabajo
-# 20250803 CSV generado  en carpeta de trabajo, incluyendo encabezado y filas
+# 20250803 CSV generado en carpeta de trabajo, incluyendo encabezado y filas
 # 20250803 Listado de formatos con --list-formats si no es playlist, para info en log
 # 20250803 Agregada columna URL al CSV reportado para auditoría y postproceso OSINT
 # 20250804 Verificacion de versiones desde github raw (sin API JSON)
-# 20250805 Cambio para actualización por git clone temporal único, manejo seguro de log en update, repo obfus. (sRepG)
+# 20250805 Cambio para actualización por git clone temporal único, manejo seguro de log en update
+# 20250805 Integra arte y suscripcion en update
