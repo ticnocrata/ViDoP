@@ -5,15 +5,15 @@
 # Proyecto: https://github.com/ticnocrata/ViDoP
 # Esta herramienta puede ser USADA y MODIFICADA para fines personales o no comerciales.
 # Para uso con fines de lucro, se requiere licencia comercial del autor.
-# LastUpdate: 20250805v1.1
-LastUpdate="20250805v1.1"
+# LastUpdate: 20250805v1.3
+LastUpdate="20250805v1.3"
 
 #set -e
 set +m
 
 #######################################################################
 # Manejo de Colores con mnemonicos para facilidad de secuencias ANSI 
-declare -A aCOLOR=(
+declare -A aCL=(
     # Normal					Bold					Subrayado				Fondo
     ['cblack']='\e[0;30m'		['bblack']='\e[1;30m'		['ublack']='\e[4;30m'		['on_black']='\e[40m'
     ['cred']='\e[0;31m'			['bred']='\e[1;31m'		['ured']='\e[4;31m'		['on_red']='\e[41m'
@@ -27,20 +27,41 @@ declare -A aCOLOR=(
     ['alert']='\e[1;37m\e[41m'	['noColor']='\e[0m'
 )
 if ! [ -t 1 ]; then
-    for sColorClave in "${!aCOLOR[@]}"; do
-       aCOLOR["${sColorClave}"]=""
+    for sColorClave in "${!aCL[@]}"; do
+       aCL["${sColorClave}"]=""
     done
 fi
 
 #######################################################################
 # Validación de dependencias externas indispensables para que funcione esta herramienta
-aDependenciasReq=(yt-dlp ffmpeg jq curl base64)
+aDependenciasReq=(yt-dlp ffmpeg jq curl base64 git)
+local sResp sNombre
 for sDependencia in "${aDependenciasReq[@]}"; do
     if ! command -v "${sDependencia}" >/dev/null 2>&1; then
-        echo -e "${aCOLOR['alert']}Falta dependencia requerida: ${sDependencia}${aCOLOR['noColor']}"
-        exit 2
+        echo -e "${aCL['alert']}Falta dependencia requerida: ${sDependencia}${aCL['noColor']}"
+        if [[ "${bAceptaTodo}" -eq 0 ]]; then
+		read -rp "[UPDATE] ¿Instalar ${sNombre}? (y=si / n=no / a=aceptar todas): " sResp
+		case "${sResp}" in
+		    a|A) bAceptaTodo=1 ;;
+		    y|Y) ;;
+		    n|N) LogMsg ERROR "No se puede continuar sin ${sNombre}"; exit 2 ;;
+		    *)   LogMsg WARN "Respuesta inválida. Repite."; sNombre="${sNombre}"; continue ;;
+		esac
+	fi
+        case "${sNombre}" in
+                git)     bash -c "apt-get update && apt-get install -y git" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
+                yt-dlp)  bash -c "pip install -U yt-dlp || apt-get install -y yt-dlp" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
+                ffmpeg)  bash -c "apt-get install -y ffmpeg" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
+                jq)      bash -c "apt-get install -y jq" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
+                curl)    bash -c "apt-get install -y curl" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
+                base64)  bash -c "apt-get install -y coreutils" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
+                *)       LogMsg ERROR "No hay comandos de instalación para ${sNombre}. Cancelando."; exit 2 ;;
+        esac
+         command -v "${sNombre}" >/dev/null 2>&1 || { LogMsg ERROR "No se encontró ${sNombre} tras instalar"; exit 2; }
+         LogMsg OK "Instalado: ${sNombre}"
     fi
 done
+LogMsg OK "Dependencias verificadas."
 
 #######################################################################
 # Variables globales necesarias, valores defaults y otras inicializaciones
@@ -58,8 +79,7 @@ nNumFrames=""
 fArchivoLog=""
 fDirectorioDescarga=""
 sDirectorioOriginal="$(pwd)"
-# RAW github del script principal (ofuscado base64, sin JSON API)
-fRawScript="$(echo aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3RpY25vY3JhdGEvVmlEb1AvbWFpbi9WaURvUC5zaA== | base64 -d 2>/dev/null || true)"
+fRawScr="$(echo aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3RpY25vY3JhdGEvVmlEb1AvbWFpbi9WaURvUC5zaA== | base64 -d 2>/dev/null || true)"
 uNoti="$(echo aHR0cDovL21haWxpbmcuaXRjb21tLm14L3N1YnNjcmliZQo= | base64 -d 2>/dev/null || true)"
 fScriptLocal="$0"
 
@@ -69,17 +89,17 @@ LogMsg() {
     local sTipo="$1" sMsg="$*"
     local sColor sPrefix
     case "${sTipo}" in
-        INFO)   sColor="${aCOLOR['bblue']}";       sPrefix="[INFO]       ";;
-        OK)     sColor="${aCOLOR['bgreen']}";      sPrefix="[OK]         ";;
-        ERROR)  sColor="${aCOLOR['bred']}";        sPrefix="[ERROR]      ";;
-        KILL)   sColor="${aCOLOR['byellow']}";     sPrefix="[KILL]       ";;
-        TREE)   sColor="${aCOLOR['bcyan']}";       sPrefix="[TREE]       ";;
-        ALERTA) sColor="${aCOLOR['alert']}";       sPrefix="[ALERTA]     ";;
-        UPDATE) sColor="${aCOLOR['bmagenta']}";    sPrefix="[UPDATE]     ";;
-        *)      sColor="${aCOLOR['bwhite']}";      sPrefix="[MSG]        ";;
+        INFO)   sColor="${aCL['bblue']}";       sPrefix="[INFO]       ";;
+        OK)     sColor="${aCL['bgreen']}";      sPrefix="[OK]         ";;
+        ERROR)  sColor="${aCL['bred']}";        sPrefix="[ERROR]      ";;
+        KILL)   sColor="${aCL['byellow']}";     sPrefix="[KILL]       ";;
+        TREE)   sColor="${aCL['bcyan']}";       sPrefix="[TREE]       ";;
+        WARN)   sColor="${aCL['alert']}";       sPrefix="[WARN]       ";;
+        UPDATE) sColor="${aCL['bmagenta']}";    sPrefix="[UPDATE]     ";;
+        *)      sColor="${aCL['bwhite']}";      sPrefix="[MSG]        ";;
     esac
     local sTS="[$(date '+%Y-%m-%d %H:%M:%S')]"
-    echo -e "${sColor}${sTS} ${sPrefix}${sMsg}${aCOLOR['noColor']}"
+    echo -e "${sColor}${sTS} ${sPrefix}${sMsg}${aCL['noColor']}"
     if [[ -n "${fArchivoLog}" && -n "${fDirectorioDescarga}" ]]; then
         local fDirParent
         fDirParent="$(dirname -- "${fArchivoLog}")"
@@ -119,7 +139,7 @@ ImprimeLineaAlineada() {
 #######################################################################
 # Mostrar la ayuda de la herramienta
 AsciiArt() {
-    local sBanner="${aCOLOR['bmagenta']}" sArt="${aCOLOR['bcyan']}" sURL="${aCOLOR['bmagenta']}" sReset="${aCOLOR['noColor']}" sToolName="${aCOLOR['byellow']}"
+    local sBanner="${aCL['bmagenta']}" sArt="${aCL['bcyan']}" sURL="${aCL['bmagenta']}" sReset="${aCL['noColor']}" sToolName="${aCL['byellow']}"
     printf "${sBanner}(c) Luis Angel Ortega     ${sToolName}Video Downloader and Processor ${sBanner}ViDoP${sReset}\n"
     printf "${sArt}                                   '''\n"
     printf "                                  (O O)\n"
@@ -134,7 +154,7 @@ AsciiArt() {
     printf "${sReset}\n"
 } #AsciiArt
 MostrarAyuda() {
-    local sUso="${aCOLOR['bgreen']}" sParam="${aCOLOR['byellow']}" sVal="${aCOLOR['bcyan']}" sDesc="${aCOLOR['bwhite']}" sEjemplo="${aCOLOR['bgreen']}" sReset="${aCOLOR['noColor']}"
+    local sUso="${aCL['bgreen']}" sParam="${aCL['byellow']}" sVal="${aCL['bcyan']}" sDesc="${aCL['bwhite']}" sEjemplo="${aCL['bgreen']}" sReset="${aCL['noColor']}"
     AsciiArt
     printf "Uso: ${sUso}$(basename "$0")${sReset} -u ${sUso}URL${sReset} [-m MODO] [-q CALIDAD] [-f [Ns|all]] [-s INI-FIN] [--st [idioma]] [-a]\n"
     printf "\n"
@@ -155,7 +175,7 @@ MostrarAyuda() {
     printf "  ${sVal}%s -u URL -st es${sReset}  ${sDesc} descarga .srt en español \n" "$(basename "$0")"
     printf "\n"
     if [[ -n "$1" ]]; then
-        echo -e "${aCOLOR['alert']}Error: $1${aCOLOR['noColor']}\n"
+        echo -e "${aCL['alert']}Error: $1${aCL['noColor']}\n"
         LogMsg ERROR "$1"
     fi
     exit 0
@@ -164,66 +184,56 @@ MostrarAyuda() {
 #######################################################################
 # Gestionar las actualizaciones (lectura directa desde RAW)
 CheckUpdate() {
-    LogMsg UPDATE "Verificando actualización contra script directo RAW..."
-    LogMsg INFO "Leyendo raw desde ${fRawScript}"
+    LogMsg UPDATE "Verificando actualización de la herramienta en GitHub ..."
+    LogMsg INFO "Leyendo raw desde ${fRawScr}"
     local sRemoteDate
-    sRemoteDate="$(curl -fsSL --max-time 12 "${fRawScript}" 2>/dev/null | head -20 | grep -m1 '^# LastUpdate:' | awk '{print $3}')"
+    sRemoteDate="$(curl -fsSL --max-time 12 "${fRawScr}" 2>/dev/null | head -20 | grep -m1 '^# LastUpdate:' | awk '{print $3}')"
     if [[ -z "$sRemoteDate" ]]; then
-        LogMsg UPDATE "No se pudo leer el LastUpdate remoto desde el script raw (${fRawScript})."
+        LogMsg UPDATE "No se pudo leer desde GitHub, revisar con el autor (${fRawScr})."
         return 2
     fi
-    LogMsg INFO "LastUpdate remoto: $sRemoteDate || Local: $LastUpdate"
+    LogMsg INFO "Version remota: $sRemoteDate || Local: $LastUpdate"
     if [[ "$sRemoteDate" != "$LastUpdate" ]]; then
         LogMsg UPDATE "¡Hay NUEVA VERSIÓN! ($sRemoteDate). Ejecuta con -a para actualizar."
-        export VSCRIPT_NEW_URL="$fRawScript"
+        export VSCRIPT_NEW_URL="$fRawScr"
         export VSCRIPT_NEW_LU="$sRemoteDate"
         return 1
     else
-        LogMsg OK "Tu herramienta está AL DÍA. (LastUpdate igual: $LastUpdate)"
+        LogMsg OK "Tu herramienta está AL DÍA. ($LastUpdate)"
         return 0
     fi
 } #CheckUpdate
 
 AutoActualizar() {
-    if [[ -z "$VSCRIPT_NEW_URL" ]]; then
-        LogMsg ERROR "No se detectó URL de nueva versión. Ejecuta primero CheckUpdate."
-        return 1
-    fi
+    local sRepoGit="https://github.com/ticnocrata/ViDoP.git"
     local dScriptDir
     dScriptDir="$(cd "$(dirname -- "$0")" && pwd)"
-    local fTmpNew="${dScriptDir}/ViDoP.sh.itcomm"
-
-    LogMsg UPDATE "Descargando nueva versión del script a $fTmpNew"
-    if ! curl -fsSL --max-time 20 -o "$fTmpNew" "$VSCRIPT_NEW_URL"; then
-        LogMsg ERROR "ERROR de descarga. Revisa conexión, permisos o URL."
-        [[ -f "$fTmpNew" ]] && rm -f "$fTmpNew"
-        return 1
-    fi
-    local sNewUpdate
-    sNewUpdate="$(grep -m1 '^# LastUpdate:' "$fTmpNew" | awk '{print $3}')"
-    LogMsg UPDATE "Marcador en descargado: $sNewUpdate"
-    if [[ -z "$sNewUpdate" ]]; then
-        LogMsg ERROR "No se encontró LastUpdate en el script descargado."
-        rm -f "$fTmpNew"
-        return 1
-    fi
-    if [[ "$sNewUpdate" == "$LastUpdate" ]]; then
-        LogMsg OK "Ya tienes la última versión."
-        rm -f "$fTmpNew"
-        return 0
-    fi
-
-    # Reemplazo de la herramienta actual, con seguridad
+    local sTmpDir="${dScriptDir}/ViDoP_tmp_update_$(date +%s)_$RANDOM"
     local fScriptActivo="${dScriptDir}/$(basename -- "$0")"
-    LogMsg UPDATE "Sustituyendo la herramienta actual por la nueva versión..."
-    if cp -f "$fTmpNew" "$fScriptActivo"; then
-        chmod +x "$fScriptActivo"
-        rm -f "$fTmpNew"
+
+    LogMsg UPDATE "Clonando el repositorio oficial desde ${sRepoGit} a ${sTmpDir}"
+    if ! git clone --depth=1 "${sRepoGit}" "${sTmpDir}" 2>&1 | tee -a "${fArchivoLog}"; then
+        LogMsg ERROR "ERROR durante el git clone. Revisa conexión o permisos."
+        [[ -d "${sTmpDir}" ]] && rm -rf "${sTmpDir}"
+        return 1
+    fi
+
+    local fNuevoScript="${sTmpDir}/$(basename -- "$0")"
+    if [[ ! -f "${fNuevoScript}" ]]; then
+        LogMsg ERROR "No se encontró el script a actualizar en la carpeta clonada (${fNuevoScript})"
+        rm -rf "${sTmpDir}"
+        return 1
+    fi
+
+    LogMsg UPDATE "Sustituyendo el script actual por la nueva versión desde ${fNuevoScript} ..."
+    if cp -f "${fNuevoScript}" "${fScriptActivo}"; then
+        chmod +x "${fScriptActivo}"
+        rm -rf "${sTmpDir}"
         LogMsg OK "¡Actualización exitosa! Por favor vuelve a ejecutar la herramienta."
         exit 0
     else
-        LogMsg ERROR "No fue posible reemplazar la herramienta. Se conserva la anterior."
-        rm -f "$fTmpNew"
+        LogMsg ERROR "No fue posible reemplazar el script actual. Se conserva la versión anterior."
+        rm -rf "${sTmpDir}"
         exit 2
     fi
 } #AutoActualizar
@@ -283,7 +293,7 @@ CheckUpdate
 
 #######################################################################
 # Aqui comienza la acción!
-echo -e "${aCOLOR['byellow']}Procurando determinar la naturaleza de la URL ${sUrl} ${aCOLOR['bcyan']}${aCOLOR['noColor']}"
+echo -e "${aCL['byellow']}Procurando determinar la naturaleza de la URL ${sUrl} ${aCL['bcyan']}${aCL['noColor']}"
 sYtDlpResult=$(yt-dlp --flat-playlist --skip-download"${sUrl}" 2>&1 || true) #Trae info de la URL, sin descargar
 if echo "${sYtDlpResult}" | grep -q '\[playlist\]' || [[ "${sUrl}" == *"playlist"* ]]; then
     bEsPlaylist=1
@@ -292,7 +302,7 @@ if echo "${sYtDlpResult}" | grep -q '\[playlist\]' || [[ "${sUrl}" == *"playlist
     mkdir -p "${fDirectorioDescarga}"
     fArchivoLog="${sDirectorioOriginal}/${fDirectorioDescarga}/vidop-itcomm.log"
     > "${fArchivoLog}"
-    LogMsg OK "Intentaré procesar la playlist: ${aCOLOR['bcyan']}${sNombrePlaylist} ${aCOLOR['noColor']}"
+    LogMsg OK "Intentaré procesar la playlist: ${aCL['bcyan']}${sNombrePlaylist} ${aCL['noColor']}"
 else
     bEsPlaylist=0
     sTituloTmp=$(yt-dlp --get-title --skip-download "${sUrl}" 2>/dev/null | head -1) #Trae el titulo del archivo en caso de que tenga, sin descargarlo 
@@ -308,7 +318,7 @@ else
     mkdir -p "${fDirectorioDescarga}"
     fArchivoLog="${sDirectorioOriginal}/${fDirectorioDescarga}/vidop-itcomm.log"
     > "${fArchivoLog}"
-    LogMsg INFO "Intentaré procesar un archivo de video. Carpeta: ${aCOLOR['bcyan']}${fDirectorioDescarga}${aCOLOR['noColor']}"
+    LogMsg INFO "Intentaré procesar un archivo de video. Carpeta: ${aCL['bcyan']}${fDirectorioDescarga}${aCL['noColor']}"
 fi
 
 #######################################################################
@@ -421,7 +431,7 @@ if [[ "${bError}" -eq 0 ]]; then
     nAnchoTabla=90
     ImprimeLineaAlineada "c" "=" "${nAnchoTabla}" " Resumen del proceso realizado " | tee -a "${fArchivoLog}"
     sCabecera=$(printf "%-25s %-36s %-10s %-12s %-12s %15s" "Subido Por" "Título" "Tipo" "Fecha" "Subtítulos" "Vistas")
-    echo -e "${aCOLOR['bmagenta']}${sCabecera}${aCOLOR['noColor']}" | tee -a "${fArchivoLog}"
+    echo -e "${aCL['bmagenta']}${sCabecera}${aCL['noColor']}" | tee -a "${fArchivoLog}"
     ImprimeLineaAlineada "c" "~" "${nAnchoTabla}" "" | tee -a "${fArchivoLog}"
     echo 'Uploader,Titulo,Tipo,Fecha,Subtitulos,Vistas,URL' > "vidop-itcomm.csv"
     #Contabilizar archivos
@@ -466,17 +476,17 @@ if [[ "${bError}" -eq 0 ]]; then
             sVistasFmt=$(printf "%15s" "N/A")
         fi
 
-        printf "${aCOLOR['bcyan']}%-25s %-36s %-10s %-12s %-12s %15s${aCOLOR['noColor']}\n" \
+        printf "${aCL['bcyan']}%-25s %-36s %-10s %-12s %-12s %15s${aCL['noColor']}\n" \
             "$sUploader" "$sTitulo" "$tipo" "$sFechaFmt" "$sSubs" "$sVistasFmt" | tee -a "${fArchivoLog}"
         echo "\"${sUploader//\"/}\""','"$(echo "${sTituloRaw//\"/}")"','"${tipo}","${sFechaFmt}","${sSubs}","${nViewCount}","${sUrlExacta}" >> "vidop-itcomm.csv"
     done
 
     ImprimeLineaAlineada "c" "-" "${nAnchoTabla}" "" | tee -a "${fArchivoLog}"
-    echo -e "${aCOLOR['byellow']}Videos: ${nNumVideos}  Audios: ${nNumAudios}  Subtítulos: ${nNumSubtitulos}${aCOLOR['noColor']}" | tee -a "${fArchivoLog}"
-    echo -e "${aCOLOR['bgreen']}Archivos y log en: $(pwd)${aCOLOR['noColor']}" | tee -a "${fArchivoLog}"
+    echo -e "${aCL['byellow']}Videos: ${nNumVideos}  Audios: ${nNumAudios}  Subtítulos: ${nNumSubtitulos}${aCL['noColor']}" | tee -a "${fArchivoLog}"
+    echo -e "${aCL['bgreen']}Archivos y log en: $(pwd)${aCL['noColor']}" | tee -a "${fArchivoLog}"
     nErrores=$(grep -c ERROR "${fArchivoLog}" || true)
     if (( nErrores > 0 )); then
-        echo -e "${aCOLOR['bred']}Se detectaron errores. Consulta el log: ${fArchivoLog}${aCOLOR['noColor']}"
+        echo -e "${aCL['bred']}Se detectaron errores. Consulta el log: ${fArchivoLog}${aCL['noColor']}"
     fi
     ImprimeLineaAlineada "c" "=" "${nAnchoTabla}" "" | tee -a "${fArchivoLog}"
 fi
@@ -508,4 +518,5 @@ fi
 # 20250803 CSV generado  en carpeta de trabajo, incluyendo encabezado y filas
 # 20250803 Listado de formatos con --list-formats si no es playlist, para info en log
 # 20250803 Agregada columna URL al CSV reportado para auditoría y postproceso OSINT
-# 20250804 Actualización directa desde github raw (sin API JSON)
+# 20250804 Verificacion de versiones desde github raw (sin API JSON)
+# 20250805 Cambio para  actualización por git clone temporal único
