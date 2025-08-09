@@ -5,8 +5,8 @@
 # Proyecto: https://github.com/ticnocrata/ViDoP
 # Esta herramienta puede ser USADA y MODIFICADA para fines personales o no comerciales.
 # Para uso con fines de lucro, se requiere licencia comercial del autor.
-# LastUpdate: 20250805v1.2
-LastUpdate="20250805v1.2"
+# LastUpdate: 20250805v1.3
+LastUpdate="20250805v1.3"
 
 #set -e
 set +m
@@ -14,17 +14,15 @@ set +m
 #######################################################################
 # Manejo de Colores con mnemonicos para facilidad de secuencias ANSI 
 declare -A aCL=(
-    # Normal					Bold					Subrayado				Fondo
-    ['cblack']='\e[0;30m'		['bblack']='\e[1;30m'		['ublack']='\e[4;30m'		['on_black']='\e[40m'
-    ['cred']='\e[0;31m'			['bred']='\e[1;31m'		['ured']='\e[4;31m'		['on_red']='\e[41m'
-    ['cgreen']='\e[0;32m'		['bgreen']='\e[1;32m'		['ugreen']='\e[4;32m'		['on_green']='\e[42m'
-    ['cyellow']='\e[0;33m'		['byellow']='\e[1;33m'	['uyellow']='\e[4;33m'	['on_yellow']='\e[43m'
-    ['cblue']='\e[0;34m'		['bblue']='\e[1;34m'		['ublue']='\e[4;34m'		['on_blue']='\e[44m'
-    ['cmagenta']='\e[0;35m'	['bmagenta']='\e[1;35m'	['umagenta']='\e[4;35m'	['on_purple']='\e[45m'
-    ['ccyan']='\e[0;36m'		['bcyan']='\e[1;36m'		['ucyan']='\e[4;36m'		['on_cyan']='\e[46m'
-    ['cwhite']='\e[0;37m'		['bwhite']='\e[1;37m'		['uwhite']='\e[4;37m'		['on_white']='\e[47m'
-    # Combos útiles y reset
-    ['alert']='\e[1;37m\e[41m'	['noColor']='\e[0m'
+    ['cblack']='\e[0;30m'     ['bblack']='\e[1;30m'      ['ublack']='\e[4;30m'     ['on_black']='\e[40m'
+    ['cred']='\e[0;31m'       ['bred']='\e[1;31m'        ['ured']='\e[4;31m'      ['on_red']='\e[41m'
+    ['cgreen']='\e[0;32m'     ['bgreen']='\e[1;32m'      ['ugreen']='\e[4;32m'    ['on_green']='\e[42m'
+    ['cyellow']='\e[0;33m'    ['byellow']='\e[1;33m'     ['uyellow']='\e[4;33m'   ['on_yellow']='\e[43m'
+    ['cblue']='\e[0;34m'      ['bblue']='\e[1;34m'       ['ublue']='\e[4;34m'     ['on_blue']='\e[44m'
+    ['cmagenta']='\e[0;35m'   ['bmagenta']='\e[1;35m'    ['umagenta']='\e[4;35m'  ['on_purple']='\e[45m'
+    ['ccyan']='\e[0;36m'      ['bcyan']='\e[1;36m'       ['ucyan']='\e[4;36m'     ['on_cyan']='\e[46m'
+    ['cwhite']='\e[0;37m'     ['bwhite']='\e[1;37m'      ['uwhite']='\e[4;37m'    ['on_white']='\e[47m'
+    ['alert']='\e[1;37m\e[41m' ['noColor']='\e[0m'
 )
 if ! [ -t 1 ]; then
     for sColorClave in "${!aCL[@]}"; do
@@ -59,58 +57,6 @@ LogMsg() {
 } #LogMsg
 
 #######################################################################
-# Validación de dependencias externas indispensables para que funcione esta herramienta
-aDependenciasReq=(yt-dlp ffmpeg jq curl base64 git)
-bAceptaTodo=0
-for sDependencia in "${aDependenciasReq[@]}"; do
-    sNombre="${sDependencia}"   # <---- ASIGNAR EL NOMBRE AQUÍ
-    if ! command -v "${sDependencia}" >/dev/null 2>&1; then
-        echo -e "${aCL['alert']}Falta dependencia requerida: ${sDependencia}${aCL['noColor']}"
-        if [[ "${bAceptaTodo}" -eq 0 ]]; then
-            read -rp "[UPDATE] ¿Instalar ${sNombre}? (y=si / n=no / a=aceptar todas): " sResp
-            case "${sResp}" in
-                a|A) bAceptaTodo=1 ;;
-                y|Y) ;;
-                n|N) LogMsg ERROR "No se puede continuar sin ${sNombre}"; exit 2 ;;
-                *)   LogMsg WARN "Respuesta inválida. Repite."; continue ;;
-            esac
-        fi
-        case "${sNombre}" in
-                git)     bash -c "apt-get update && apt-get install -y git" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
-                yt-dlp)  bash -c "pip install -U yt-dlp || apt-get install -y yt-dlp" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
-                ffmpeg)  bash -c "apt-get install -y ffmpeg" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
-                jq)      bash -c "apt-get install -y jq" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
-                curl)    bash -c "apt-get install -y curl" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
-                base64)  bash -c "apt-get install -y coreutils" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
-                *)       LogMsg ERROR "No hay comandos de instalación para ${sNombre}. Cancelando."; exit 2 ;;
-        esac
-         command -v "${sNombre}" >/dev/null 2>&1 || { LogMsg ERROR "No se encontró ${sNombre} tras instalar"; exit 2; }
-         LogMsg OK "Instalado: ${sNombre}"
-    fi
-done
-LogMsg OK "Dependencias verificadas."
-
-#######################################################################
-# Variables globales necesarias, valores defaults y otras inicializaciones
-sModo="ambos"
-sCalidad="best"
-sUrl=""
-sSubsIdioma=""
-sSeccion=""
-sNombrePlaylist=""
-bError=0
-bEsPlaylist=0
-bSubs=0
-bAutoActualizar=0
-nNumFrames=""
-fArchivoLog=""
-fDirectorioDescarga=""
-sDirectorioOriginal="$(pwd)"
-fRawScr="$(echo aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3RpY25vY3JhdGEvVmlEb1AvbWFpbi9WaURvUC5zaA== | base64 -d 2>/dev/null || true)"
-uNoti="$(echo aHR0cDovL21haWxpbmcuaXRjb21tLm14L3N1YnNjcmliZQo= | base64 -d 2>/dev/null || true)"
-fScriptLocal="$0"
-
-#######################################################################
 # Rutina para texto alineado (izquierda, centro, derecha)
 ImprimeLineaAlineada() {
     local sAlineacion="$1" sCaracter="$2" nLargo="$3" sMensaje="${4:-}"
@@ -136,6 +82,59 @@ ImprimeLineaAlineada() {
     fi
     echo -e "$sLinea"
 } #ImprimeLineaAlineada
+
+#######################################################################
+# Variables globales necesarias, valores defaults y otras inicializaciones
+aDependenciasReq=(yt-dlp ffmpeg jq curl base64 git)
+bAceptaTodo=0
+sModo="ambos"
+sCalidad="best"
+sUrl=""
+sSubsIdioma=""
+sSeccion=""
+sNombrePlaylist=""
+bError=0
+bEsPlaylist=0
+bSubs=0
+bAutoActualizar=0
+nNumFrames=""
+fArchivoLog=""
+fDirectorioDescarga=""
+sDirectorioOriginal="$(pwd)"
+fRawScr="$(echo aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL3RpY25vY3JhdGEvVmlEb1AvbWFpbi9WaURvUC5zaA== | base64 -d 2>/dev/null || true)"
+uNoti="$(echo aHR0cDovL21haWxpbmcuaXRjb21tLm14L3N1YnNjcmliZQo= | base64 -d 2>/dev/null || true)"
+fScriptLocal="$0"
+sRepG="aHR0cHM6Ly9naXRodWIuY29tL3RpY25vY3JhdGEvVmlEb1Aua2l0"
+
+#######################################################################
+# Validación de dependencias externas indispensables para que funcione esta herramienta
+for sDependencia in "${aDependenciasReq[@]}"; do
+    sNombre="${sDependencia}"
+    if ! command -v "${sDependencia}" >/dev/null 2>&1; then
+        echo -e "${aCL['alert']}Falta dependencia requerida: ${sDependencia}${aCL['noColor']}"
+        if [[ "${bAceptaTodo}" -eq 0 ]]; then
+            read -rp "[UPDATE] ¿Instalar ${sNombre}? (y=si / n=no / a=aceptar todas): " sResp
+            case "${sResp}" in
+                a|A) bAceptaTodo=1 ;;
+                y|Y) ;;
+                n|N) LogMsg ERROR "No se puede continuar sin ${sNombre}"; exit 2 ;;
+                *)   LogMsg WARN "Respuesta inválida. Repite."; continue ;;
+            esac
+        fi
+        case "${sNombre}" in
+                git)     bash -c "apt-get update && apt-get install -y git" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
+                yt-dlp)  bash -c "pip install -U yt-dlp || apt-get install -y yt-dlp" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
+                ffmpeg)  bash -c "apt-get install -y ffmpeg" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
+                jq)      bash -c "apt-get install -y jq" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
+                curl)    bash -c "apt-get install -y curl" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
+                base64)  bash -c "apt-get install -y coreutils" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 2; } ;;
+                *)       LogMsg ERROR "No hay comandos de instalación para ${sNombre}. Cancelando."; exit 2 ;;
+        esac
+        command -v "${sNombre}" >/dev/null 2>&1 || { LogMsg ERROR "No se encontró ${sNombre} tras instalar"; exit 2; }
+        LogMsg OK "Instalado: ${sNombre}"
+    fi
+done
+LogMsg OK "Dependencias verificadas."
 
 #######################################################################
 # Mostrar la ayuda de la herramienta
@@ -206,14 +205,21 @@ CheckUpdate() {
 } #CheckUpdate
 
 AutoActualizar() {
-    local sRepoGit="https://github.com/ticnocrata/ViDoP.git"
+    local sRepoGit
+    sRepoGit="$(echo "${sRepG}" | base64 -d 2>/dev/null || true)"
     local dScriptDir
     dScriptDir="$(cd "$(dirname -- "$0")" && pwd)"
     local sTmpDir="${dScriptDir}/ViDoP_tmp_update_$(date +%s)_$RANDOM"
     local fScriptActivo="${dScriptDir}/$(basename -- "$0")"
 
     LogMsg UPDATE "Clonando el repositorio oficial desde ${sRepoGit} a ${sTmpDir}"
-    if ! git clone --depth=1 "${sRepoGit}" "${sTmpDir}" 2>&1 | tee -a "${fArchivoLog}"; then
+    if [[ -n "${fArchivoLog}" && -f "${fArchivoLog}" ]]; then
+        git clone --depth=1 "${sRepoGit}" "${sTmpDir}" 2>&1 | tee -a "${fArchivoLog}"
+    else
+        git clone --depth=1 "${sRepoGit}" "${sTmpDir}"
+    fi
+
+    if [[ $? -ne 0 ]]; then
         LogMsg ERROR "ERROR durante el git clone. Revisa conexión o permisos."
         [[ -d "${sTmpDir}" ]] && rm -rf "${sTmpDir}"
         return 1
@@ -306,10 +312,9 @@ if echo "${sYtDlpResult}" | grep -q '\[playlist\]' || [[ "${sUrl}" == *"playlist
     LogMsg OK "Intentaré procesar la playlist: ${aCL['bcyan']}${sNombrePlaylist} ${aCL['noColor']}"
 else
     bEsPlaylist=0
-    sTituloTmp=$(yt-dlp --get-title --skip-download "${sUrl}" 2>/dev/null | head -1) #Trae el titulo del archivo en caso de que tenga, sin descargarlo 
-    sIdTmp=$(yt-dlp --get-id --skip-download "${sUrl}" 2>/dev/null | head -1) #Trae id del archivo, sin descargarlo
+    sTituloTmp=$(yt-dlp --get-title --skip-download "${sUrl}" 2>/dev/null | head -1)
+    sIdTmp=$(yt-dlp --get-id --skip-download "${sUrl}" 2>/dev/null | head -1)
     sNomUnico=""
-    #Crea la carpeta de trabajo, conforme el nombre o el ID del video
     if [[ -n "$sTituloTmp" ]]; then
         sNomUnico="$(echo "${sTituloTmp:0:20}" | sed 's/[^A-Za-z0-9._-]/_/g' | sed 's/^[ _-]*//;s/[ _-]*$//')"
     else
@@ -330,7 +335,6 @@ fi
 
 #######################################################################
 # Construcción y ejecución del comando para la descarga
-# Cambia a la carpeta de trabajo
 cd "${sDirectorioOriginal}/${fDirectorioDescarga}"
 LogMsg INFO "Carpeta de trabajo: ${sDirectorioOriginal}/${fDirectorioDescarga}"
 
@@ -339,9 +343,7 @@ aComandoYtDlp=(
     --add-header "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     --write-info-json --no-warnings --progress --newline
     -P "."
-) #Opciones BASE para descarga
-
-# y ahora, analizamos las SUBOPCIONES pertinentes
+)
 if [[ -n "${sSeccion}" ]]; then
     aComandoYtDlp+=(--download-sections "*${sSeccion}")
 fi
@@ -375,12 +377,10 @@ if [[ "${bSubs}" -eq 1 ]]; then
 fi
 
 LogMsg INFO "Opciones actuales: $(printf '%q ' "${aComandoYtDlp[@]}")"
-# Snapshot  de los archivos de video presentes, ANTES de ejecutar la descarga
 mapfile -d '' -t aArchivosAntes < <(find . -maxdepth 1 -type f \( -iname "*.mp4" -o -iname "*.mkv" -o -iname "*.webm" \) -printf "%f\0")
 LogMsg TREE "Archivos antes: $(printf '%q ' "${aArchivosAntes[@]}")"
 LogMsg OK "Inicio de descarga multimedia, modalidad ${sModo} (calidad: ${sCalidad}), destino [$(pwd)]"
 "${aComandoYtDlp[@]}" "${sUrl}" 2>&1 | tee -a "${fArchivoLog}" || bError=1
-# Snapshot después de descarga (igual que antes, solo en subcarpeta de trabajo)
 mapfile -d '' -t aArchivosDespues < <(find . -maxdepth 1 -type f \( -iname "*.mp4" -o -iname "*.mkv" -o -iname "*.webm" \) -printf "%f\0")
 LogMsg TREE "Archivos despues: $(printf '%q ' "${aArchivosDespues[@]}")"
 #######################################################################
@@ -389,24 +389,21 @@ if [[ -n "${nNumFrames}" ]]; then
     LogMsg INFO "Procesando solicitud de fotogramas para los archivos de video descargados"
     declare -A aArchivosAntesMap
     for fArchivo in "${aArchivosAntes[@]}"; do aArchivosAntesMap["${fArchivo}"]=1; done
-    #Detecta los archivos, nutre el array y crea la subcarpeta
     aVideosNuevos=()
     for fArchivo in "${aArchivosDespues[@]}"; do
         [[ "${fArchivo}" =~ \.mp4$|\.mkv$|\.webm$ ]] || continue
         if [[ -z "${aArchivosAntesMap["${fArchivo}"]}" ]]; then
             LogMsg OK "Identificado como nuevo, archivo: ${fArchivo}"
             aVideosNuevos+=("${fArchivo}")
-            # Calcula el nombre único de subcarpeta para los frames de este archiv
             sNomUnico=""
             sNomUnico="$(echo "${fArchivo:0:20}" | sed 's/[^A-Za-z0-9._-]/_/g' | sed 's/^[ _-]*//;s/[ _-]*$//')"
-            #Crea la carpeta de trabajo
             mkdir -p "${sNomUnico}"
             LogMsg OK "Creada la subcarpeta: ${sNomUnico}"
         fi
     done
     for fVideoArchivo in "${aVideosNuevos[@]}"; do
         LogMsg INFO "Intentando extraer frames del archivo: ${fVideoArchivo}"
-        sNomUnico="$(echo "${fVideoArchivo:0:20}" | sed 's/[^A-Za-z0-9._-]/_/g' | sed 's/^[ _-]*//;s/[ _-]*$//')"   #Mismo criterio que el anterior, para la carpeta frames
+        sNomUnico="$(echo "${fVideoArchivo:0:20}" | sed 's/[^A-Za-z0-9._-]/_/g' | sed 's/^[ _-]*//;s/[ _-]*$//')"
         if [[ "${nNumFrames}" == "all" ]]; then            
             ffmpeg -nostdin -i "${fVideoArchivo}" "${sNomUnico}/frame_%05d.png" 2>&1 | tee -a "${fArchivoLog}" || bError=1
         elif [[ "${nNumFrames}" =~ ^[0-9]+s$ ]]; then
@@ -422,7 +419,6 @@ fi
 #######################################################################
 # Resumen final: SIEMPRE ve a la carpeta de descargas y ejecuta el ciclo ahí
 if [[ "${bError}" -eq 0 ]]; then
-    # Asegurate de  estar en el directorio de trabajo
     cd "${sDirectorioOriginal}/${fDirectorioDescarga}"
     nNumVideos=0
     nNumAudios=0
@@ -435,7 +431,6 @@ if [[ "${bError}" -eq 0 ]]; then
     echo -e "${aCL['bmagenta']}${sCabecera}${aCL['noColor']}" | tee -a "${fArchivoLog}"
     ImprimeLineaAlineada "c" "~" "${nAnchoTabla}" "" | tee -a "${fArchivoLog}"
     echo 'Uploader,Titulo,Tipo,Fecha,Subtitulos,Vistas,URL' > "vidop-itcomm.csv"
-    #Contabilizar archivos
     for json in *.info.json; do
         base="${json%.info.json}"
         tipo=""
@@ -520,7 +515,4 @@ fi
 # 20250803 Listado de formatos con --list-formats si no es playlist, para info en log
 # 20250803 Agregada columna URL al CSV reportado para auditoría y postproceso OSINT
 # 20250804 Verificacion de versiones desde github raw (sin API JSON)
-# 20250805 Cambio para  actualización por git clone temporal único
-
-
-
+# 20250805 Cambio para actualización por git clone temporal único, manejo seguro de log en update, repo obfus. (sRepG)
