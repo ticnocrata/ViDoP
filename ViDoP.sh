@@ -165,9 +165,9 @@ MostrarAyuda() {
     printf "  ${sParam}-u, --url URL         ${sDesc}Video o playlist a descargar.${sReset}\n"
     printf "  ${sParam}-m, --modo MODO       ${sDesc}audio, video, ambos. Default:${sVal} ambos${sDesc}.${sReset}\n"
     printf "  ${sParam}-q, --calidad         ${sDesc}best, 1080, 720, etc. Default:${sVal} best${sDesc}.${sReset}\n"
-    printf "  ${sParam}-f, --frames [OPC]    ${sVal}all${sDesc}|${sVal} Ns${sDesc} (ej. 10s) para extracción frames OSINT. Si solo usas -f extrae todos.${sReset}\n"
+    printf "  ${sParam}-f, --frames [OPC]    ${sVal}all ${sDesc}|${sVal} Ns${sDesc} (ej. 10s) para extracción frames OSINT. Si solo usas -f extrae todos.${sReset}\n"
     printf "  ${sParam}-s, --seccion INI-FIN ${sDesc}Solo descargar sección de video (ej: 00:01:00-00:03:00).${sReset}\n"
-    printf "  ${sParam}-st, --subs [IDIOMA]  ${sDesc}Descargar subtítulos .srt externos. Si omites IDIOMA, trataremos con el nativo.${sReset}\n"
+    printf "  ${sParam}-st, --subs [IDIOMA]  ${sDesc}Descargar subtítulos .srt externos. Si omites IDIOMA, trataré con el nativo.${sReset}\n"
     printf "  ${sParam}-a, --actualizar      ${sDesc}Efectuar actualización automática de la herramienta (si hay nueva versión).${sReset}\n"
     printf "  ${sParam}-h, --help            ${sDesc}Esta ayuda.${sReset}\n"
     printf "\n"
@@ -255,7 +255,7 @@ AutoActualizar() {
 
     if [[ "$sResp" =~ "1" || "$sResp" =~ "Already subscribed." ]]; then
         LogMsg OK "${sNombreUsuario}, gracias por seguir usando esta herramienta."
-        echo -e "${aCL[bgreen]}Estás anotado.${aCL[noColor]}"
+        LogMsg OK "Estás anotado."
         if [[ "${bVerbose}" -eq 1 ]]; then
             if [[ "$sResp" =~ "Already subscribed." ]]; then
                 LogMsg UPDATE "Gracias por seguir siendo un usuario recurrente con el correo ${sCorreoUsuario}"
