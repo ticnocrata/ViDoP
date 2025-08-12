@@ -29,8 +29,10 @@
 ### Instalación rápida
 
 ```bash
-curl -sSL https://github.com/ticnocrata/ViDoP/releases/latest/download/ViDoP.sh -o /usr/local/bin/vidop
-chmod +x /usr/local/bin/vidop
+# Clonar el repositorio
+git clone https://github.com/ticnocrata/ViDoP.git
+# Copiar la herramienta
+cp ViDoP/ViDoP.sh    ~/.local/bin/vidop
 ```
 
 ---

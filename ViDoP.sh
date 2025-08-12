@@ -5,8 +5,8 @@
 # Proyecto: https://github.com/ticnocrata/ViDoP
 # Esta herramienta puede ser USADA y MODIFICADA para fines personales o no comerciales.
 # Para uso con fines de lucro, se requiere licencia comercial del autor.
-# LastUpdate: 20250805v2.1c
-LastUpdate="20250805v2.1c"
+# LastUpdate: 20250805v2.1d
+LastUpdate="20250805v2.1d"
 
 set +m
 
@@ -79,12 +79,12 @@ ValidarDependencias() {
             fi
             LogMsg INFO "Comando a ejecutar: "
             case "${sNombre}" in
-                git)     echo "apt-get update && apt-get install -y git"; bash -c "apt-get update && apt-get install -y git" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
-                yt-dlp)  echo "pip install -U yt-dlp || apt-get install -y yt-dlp"; bash -c "pip install -U yt-dlp || apt-get install -y yt-dlp" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
-                ffmpeg)  echo "apt-get install -y ffmpeg"; bash -c "apt-get install -y ffmpeg" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
-                jq)      echo "apt-get install -y jq"; bash -c "apt-get install -y jq" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
-                curl)    echo "apt-get install -y curl"; bash -c "apt-get install -y curl" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
-                base64)  echo "apt-get install -y coreutils"; bash -c "apt-get install -y coreutils" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
+                git)     echo "sudo apt-get update && sudo apt-get install -y git"; bash -c "sudo apt-get update && sudo apt-get install -y git" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
+                yt-dlp)  echo "sudo apt-get install -y yt-dlp || sudo pip install -U yt-dlp"; bash -c "sudo apt-get install -y yt-dlp || sudo pip install -U yt-dlp" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
+                ffmpeg)  echo "sudo apt-get install -y ffmpeg"; bash -c "sudo apt-get install -y ffmpeg" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
+                jq)      echo "sudo apt-get install -y jq"; bash -c "sudo apt-get install -y jq" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
+                curl)    echo "sudo apt-get install -y curl"; bash -c "sudo apt-get install -y curl" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
+                base64)  echo "sudo apt-get install -y coreutils"; bash -c "sudo apt-get install -y coreutils" || { LogMsg ERROR "Falló instalar ${sNombre}"; exit 1; } ;;
                 *)       LogMsg ERROR "No hay comandos de instalación para ${sNombre}. Cancelando."; exit 1 ;;
             esac
             command -v "${sNombre}" >/dev/null 2>&1 || { LogMsg ERROR "No se encontró ${sNombre} tras instalar"; exit 1; }
