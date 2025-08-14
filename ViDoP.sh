@@ -436,12 +436,20 @@ fi
 #Verificar si es un video solo o una playlist
 echo -e "${aCL['byellow']}Procurando determinar la naturaleza de la URL ${sUrl} ${aCL['bcyan']}${aCL['noColor']}"
 if [[ "${bVerbose}" -eq 1 ]]; then
-   sYtDlpResult=$(yt-dlp  --flat-playlist --skip-download  "${sCookies} ${sUrl}")
-   #sYtDlpResult=$(yt-dlp  --flat-playlist --skip-download  "${sCookies} ${sUrl}" || true)
-   LogMsg INFO "Resultado de la pesquiza:  ${sYtDlpResult} "
+     if [[ "${bDominioRequiere}" -eq 1 && -n "${sCookies}" ]]; then
+	   sYtDlpResult=$(yt-dlp  --flat-playlist --skip-download  --cookies-from-browser "${sCookies}" "${sUrl}" || true)
+     else
+           sYtDlpResult=$(yt-dlp  --flat-playlist --skip-download  "${sUrl}" || true)
+     fi
+     LogMsg INFO "Resultado de la pesquiza:  ${sYtDlpResult} "
 else
-    sYtDlpResult=$(yt-dlp  --flat-playlist --skip-download "${sCookies} ${sUrl}" 2>&1 || true)
+     if [[ "${bDominioRequiere}" -eq 1 && -n "${sCookies}" ]]; then
+           sYtDlpResult=$(yt-dlp  --flat-playlist --skip-download  --cookies-from-browser "${sCookies}" "${sUrl}" 2>&1 || true)
+     else
+           sYtDlpResult=$(yt-dlp  --flat-playlist --skip-download  "${sUrl}"  2>&1 || true)
+     fi
 fi
+
 if echo "${sYtDlpResult}" | grep -q '\[playlist\]' || [[ "${sUrl}" == *"playlist"* ]]; then
     bEsPlaylist=1
     sNombrePlaylist=$(yt-dlp "${sCookies}" --flat-playlist --print "%(playlist_title)s" "${sUrl}" 2>&1 | head -1 | sed 's/[ \/\\:*?"<>|]/_/g' | sed 's/[^A-Za-z0-9._-]/_/g')
@@ -665,4 +673,5 @@ fi
 # 20250725 Manejo de -s/--seccion para porciones del video 
 # 20250701 Mnemonicos de color homogéneos
 # 20250701 Colores en la ayuda, error parpadeante y resumen tabular final amigable
+
 
