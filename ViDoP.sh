@@ -5,19 +5,19 @@
 # Proyecto: https://github.com/ticnocrata/ViDoP
 # Esta herramienta puede ser USADA y MODIFICADA para fines personales o no comerciales.
 # Para uso con fines de lucro, se requiere licencia comercial del autor.
-# LastUpdate: 20250805v2.1d
-LastUpdate="20250805v2.1d"
+# LastUpdate: 20250812v2.1e
+LastUpdate="20250812v2.1e"
 
 set +m
 
-#######################################################################
+##############################[ 📚 Array de Colores ANSI ]##############################
 # Manejo de Colores con mnemonicos para facilidad de secuencias ANSI 
 declare -A aCL=(
    # Normal					Bold					Subrayado				Fondo
-   ['cblack']='\e[0;30m'			['bblack']='\e[1;30m'		['ublack']='\e[4;30m'		['on_black']='\e[40m'
+   ['cblack']='\e[0;30m'		['bblack']='\e[1;30m'		['ublack']='\e[4;30m'		['on_black']='\e[40m'
    ['cred']='\e[0;31m'			['bred']='\e[1;31m'		['ured']='\e[4;31m'		['on_red']='\e[41m'
    ['cgreen']='\e[0;32m'		['bgreen']='\e[1;32m'		['ugreen']='\e[4;32m'		['on_green']='\e[42m'
-   ['cyellow']='\e[0;33m'		['byellow']='\e[1;33m'		['uyellow']='\e[4;33m'		['on_yellow']='\e[43m'
+   ['cyellow']='\e[0;33m'		['byellow']='\e[1;33m'	['uyellow']='\e[4;33m'	['on_yellow']='\e[43m'
    ['cblue']='\e[0;34m'			['bblue']='\e[1;34m'		['ublue']='\e[4;34m'		['on_blue']='\e[44m'
    ['cmagenta']='\e[0;35m'		['bmagenta']='\e[1;35m'	['umagenta']='\e[4;35m'	['on_purple']='\e[45m'
    ['ccyan']='\e[0;36m'			['bcyan']='\e[1;36m'		['ucyan']='\e[4;36m'		['on_cyan']='\e[46m'
@@ -25,14 +25,31 @@ declare -A aCL=(
    # Combos útiles y reset
    ['alert']='\e[1;37m\e[41m'	['noColor']='\e[0m'
 )
+#Sin colores para terminales no interactivas
 if ! [ -t 1 ]; then
     for sColorClave in "${!aCL[@]}"; do
        aCL["${sColorClave}"]=""
     done
 fi
 
+##############################[ 🎨 Banner ]##############################
+Banner() {
+echo -e "$(cat << EOF
+${aCL['bgreen']} _    _${aCL['bwhite']} _ _____      ${aCL['bred']}  ______  
+${aCL['bgreen']}| |  | ${aCL['bwhite']}(_|____ \      ${aCL['bred']}(_____ \ 
+${aCL['bgreen']}| |  | ${aCL['bwhite']}|_ _   \ \ ___  ${aCL['bred']}_____) )
+${aCL['bgreen']} \ \/ /${aCL['bwhite']}| | |   | / _ )\\e[1;31m|______/ 
+${aCL['bgreen']}  \  / ${aCL['bwhite']}| | |__/ / |_| ${aCL['bred']}| |      
+${aCL['bgreen']}   \/  ${aCL['bwhite']}|_|_____/ \___/${aCL['bred']}|_|  ${aCL['on_green']}     🇲🇽  ${aCL['byellow']}\e[5m=\e[25m 🥇  ${aCL['noColor']}
 
-#######################################################################
+EOF
+)"
+} #Banner
+
+Banner
+
+
+##############################[ 📝 Función: LogMsg ]##############################
 # Rutina de registro para el log y para la pantalla.
 LogMsg() {
     local sTipo="$1" sMsg="$*"
@@ -58,7 +75,7 @@ LogMsg() {
     fi
 } #LogMsg
 
-#######################################################################
+##############################[ 🛠️ Función: ValidarDependencias ]##############################
 # Validar dependencias externas correctamente, función canónica
 ValidarDependencias() {
     local aDependenciasReq=(yt-dlp ffmpeg jq curl base64 git)
@@ -94,7 +111,7 @@ ValidarDependencias() {
     LogMsg OK "Dependencias verificadas."
 } #ValidarDependencias
 
-#######################################################################
+###########################[ 📌 Imprime izq. centro o der.  ]############################
 # Rutina para texto alineado (izquierda, centro, derecha)
 ImprimeLineaAlineada() {
     local sAlineacion sCaracter nLargo sMensaje nLargoMsg nRelleno nPreFill nPostFill sLinea
@@ -113,7 +130,7 @@ ImprimeLineaAlineada() {
     echo -e "$sLinea"
 } #ImprimeLineaAlineada
 
-#######################################################################
+##############################[ 📂 Variables Globales ]##############################
 # Variables globales y valores por defecto
 bAceptaTodo=0
 sModo="ambos"
@@ -139,43 +156,42 @@ sRepG="aHR0cHM6Ly9naXRodWIuY29tL3RpY25vY3JhdGEvVmlEb1AuZ2l0Cg=="
 # Validar dependencias externas
 ValidarDependencias
 
-#######################################################################
+##############################[ 🎨 AsciiArt ]##############################
 # Arte principal y ayuda
 AsciiArt() {
-    local sBanner="${aCL['bmagenta']}" sArt="${aCL['bcyan']}" sURL="${aCL['bmagenta']}" sReset="${aCL['noColor']}" sToolName="${aCL['byellow']}"
-    printf "${sBanner}(c) Luis Angel Ortega     ${sToolName}Video Downloader and Processor ${sBanner}ViDoP${sReset}\n"
-    printf "${sArt}                                   '''\n"
+    printf "${aCL['bmagenta']}(c) Luis Angel Ortega     ${aCL['byellow']}Video Downloader and Processor ${aCL['bmagenta']}ViDoP${aCL['noColor']}\n"
+    printf "${aCL['bcyan']}                                   '''\n"
     printf "                                  (O O)\n"
     printf "                    +---------oOO--(_)---------------+\n"
     printf "                    |                                |\n"
-    printf "                    |${sURL} https://linkedin.com/in/ortgas ${sArt}|\n"
+    printf "                    |${aCL['bmagenta']} https://linkedin.com/in/ortgas ${aCL['bcyan']}|\n"
     printf "                    |                                |\n"
     printf "                    +--------------------oOO---------+\n"
     printf "                                 |__|__|\n"
     printf "                                  || ||\n"
     printf "                                 ooO Ooo\n"
-    printf "${sReset}\n"
+    printf "${aCL['noColor']}\n"
 } #AsciiArt
+##############################[ 📄 MostrarAyuda ]##############################
 MostrarAyuda() {
-    local sUso="${aCL['bgreen']}" sParam="${aCL['byellow']}" sVal="${aCL['bcyan']}" sDesc="${aCL['bwhite']}" sEjemplo="${aCL['bgreen']}" sReset="${aCL['noColor']}"
     AsciiArt
-    printf "Uso: ${sUso}$(basename "$0")${sReset} -u ${sUso}URL${sReset} [-m MODO] [-q CALIDAD] [-f [Ns|all]] [-s INI-FIN] [--st [idioma]] [-a]\n"
+    printf "Uso: ${aCL['bgreen']}$(basename "$0")${aCL['noColor']} -u ${aCL['bgreen']}URL${aCL['noColor']} [-m MODO] [-q CALIDAD] [-f [Ns|all]] [-s INI-FIN] [--st [idioma]] [-a]\n"
     printf "\n"
-    printf "${sDesc}Opciones:${sReset}\n"
-    printf "  ${sParam}-u, --url URL         ${sDesc}Video o playlist a descargar.${sReset}\n"
-    printf "  ${sParam}-m, --modo MODO       ${sDesc}audio, video, ambos. Default:${sVal} ambos${sDesc}.${sReset}\n"
-    printf "  ${sParam}-q, --calidad         ${sDesc}best, 1080, 720, etc. Default:${sVal} best${sDesc}.${sReset}\n"
-    printf "  ${sParam}-f, --frames [OPC]    ${sVal}all ${sDesc}|${sVal} Ns${sDesc} (ej. 10s) para extracción frames OSINT. Si solo usas -f extrae todos.${sReset}\n"
-    printf "  ${sParam}-s, --seccion INI-FIN ${sDesc}Solo descargar sección de video (ej: 00:01:00-00:03:00).${sReset}\n"
-    printf "  ${sParam}-st, --subs [IDIOMA]  ${sDesc}Descargar subtítulos .srt externos. Si omites IDIOMA, trataré con el nativo.${sReset}\n"
-    printf "  ${sParam}-a, --actualizar      ${sDesc}Efectuar actualización automática de la herramienta (si hay nueva versión).${sReset}\n"
-    printf "  ${sParam}-h, --help            ${sDesc}Esta ayuda.${sReset}\n"
+    printf "${aCL['bwhite']}Opciones:${aCL['noColor']}\n"
+    printf "  ${aCL['byellow']}-u, --url URL         ${aCL['bwhite']}Video o playlist a descargar.${aCL['noColor']}\n"
+    printf "  ${aCL['byellow']}-m, --modo MODO       ${aCL['bwhite']}audio, video, ambos. Default:${aCL['bcyan']} ambos${aCL['bwhite']}.${aCL['noColor']}\n"
+    printf "  ${aCL['byellow']}-q, --calidad         ${aCL['bwhite']}best, 1080, 720, etc. Default:${aCL['bcyan']} best${aCL['bwhite']}.${aCL['noColor']}\n"
+    printf "  ${aCL['byellow']}-f, --frames [OPC]    ${aCL['bcyan']}all ${aCL['bwhite']}|${aCL['bcyan']} Ns${aCL['bwhite']} (ej. 10s) para extracción frames OSINT. Si solo usas -f extrae todos.${aCL['noColor']}\n"
+    printf "  ${aCL['byellow']}-s, --seccion INI-FIN ${aCL['bwhite']}Solo descargar sección de video (ej: 00:01:00-00:03:00).${aCL['noColor']}\n"
+    printf "  ${aCL['byellow']}-st, --subs [IDIOMA]  ${aCL['bwhite']}Descargar subtítulos .srt externos. Si omites IDIOMA, trataré con el nativo.${aCL['noColor']}\n"
+    printf "  ${aCL['byellow']}-a, --actualizar      ${aCL['bwhite']}Efectuar actualización automática de la herramienta (si hay nueva versión).${aCL['noColor']}\n"
+    printf "  ${aCL['byellow']}-h, --help            ${aCL['bwhite']}Esta ayuda.${aCL['noColor']}\n"
     printf "\n"
-    printf "${sEjemplo}Ejemplos:${sReset}\n"
-    printf "  ${sVal}%s -u URL -m video -q 720${sReset} ${sDesc} para calidad 720p\n" "$(basename "$0")"
-    printf "  ${sVal}%s -u URL -f${sReset}  ${sDesc} para extraer todos los frames\n" "$(basename "$0")"
-    printf "  ${sVal}%s -u URL -f 5s${sReset}  ${sDesc} para un frame cada 5 segundos\n" "$(basename "$0")"
-    printf "  ${sVal}%s -u URL -st es${sReset}  ${sDesc} descarga .srt en español \n" "$(basename "$0")"
+    printf "${aCL['bgreen']}Ejemplos:${aCL['noColor']}\n"
+    printf "  ${aCL['bcyan']}%s -u URL -m video -q 720${aCL['noColor']} ${aCL['bwhite']} para calidad 720p\n" "$(basename "$0")"
+    printf "  ${aCL['bcyan']}%s -u URL -f${aCL['noColor']}  ${aCL['bwhite']} para extraer todos los frames\n" "$(basename "$0")"
+    printf "  ${aCL['bcyan']}%s -u URL -f 5s${aCL['noColor']}  ${aCL['bwhite']} para un frame cada 5 segundos\n" "$(basename "$0")"
+    printf "  ${aCL['bcyan']}%s -u URL -st es${aCL['noColor']}  ${aCL['bwhite']} descarga .srt en español \n" "$(basename "$0")"
     printf "\n"
     if [[ -n "$1" ]]; then
         echo -e "${aCL['alert']}Error: $1${aCL['noColor']}\n"
@@ -184,21 +200,25 @@ MostrarAyuda() {
     exit 0
 } #MostrarAyuda
 
-#######################################################################
+##############################[ 🔎 CheckUpdate ]##############################
 # Verificación de actualización (CheckUpdate)
 CheckUpdate() {
-    LogMsg UPDATE "Verificando actualización de la herramienta en GitHub ..."
-    LogMsg INFO "Leyendo raw desde ${fRawScr}"
     local sRemoteDate
+    LogMsg UPDATE "Verificando actualización de la herramienta"
+    if [[ "${bVerbose}" -eq 1 ]]; then
+        LogMsg INFO "Leyendo raw desde ${fRawScr}"
+    else
+        LogMsg INFO  "Leyendo desde GitHub"
+    fi
     sRemoteDate="$(curl -fsSL --max-time 12 "${fRawScr}" 2>/dev/null | head -20 | grep -m1 '^# LastUpdate:' | awk '{print $3}')"
     if [[ -z "$sRemoteDate" ]]; then
-        LogMsg UPDATE "No se pudo leer desde GitHub, revisar con el autor (${fRawScr})."
+        LogMsg UPDATE "No se pudo leer desde GitHub, intentar después."
         return 2
     fi
     LogMsg INFO "Version remota: $sRemoteDate || Local: $LastUpdate"
     if [[ "$sRemoteDate" != "$LastUpdate" ]]; then
-        LogMsg UPDATE "¡Hay NUEVA VERSIÓN! ($sRemoteDate). Ejecuta con -a para actualizar."
-        export VSCRIPT_NEW_URL="$fRawScr"
+        LogMsg UPDATE "Ejecuta con -a para actualizar. ${aCL['uwhite']}¡Hay NUEVA VERSIÓN! ${aCL['bgreen']}($sRemoteDate). "
+        export VSCRIPT_NEW_URL="$fRawScr" 
         export VSCRIPT_NEW_LU="$sRemoteDate"
         return 1
     else
@@ -207,7 +227,7 @@ CheckUpdate() {
     fi
 } #CheckUpdate
 
-#######################################################################
+##############################[ 🛠️ AutoActualizar ]########################
 # Rutina de actualización 
 AsciiArt2() {
     echo -e ""
@@ -229,8 +249,8 @@ AutoActualizar() {
     local fScriptActivo="${dScriptDir}/$(basename -- "$0")"
     local fRepoScript="${sTmpDir}/ViDoP.sh"
     AsciiArt2
-    echo -e "${aCL['bblue']}No need for coffee or beer 😉 just say you thanks for using this tool and staying up to date!${aCL['noColor']}"
-    echo -e "${aCL['byellow']}¡No necesito café ni cerveza 😉 solo darte gracias por usar esta herramienta y seguir las novedades!${aCL['noColor']}\n"
+    echo -e "${aCL['bblue']}No need for coffee or beer 😉, thank you for using this tool and staying up to date!${aCL['noColor']}"
+    echo -e "${aCL['byellow']}¡No necesito café ni cerveza 😉, gracias por usar esta herramienta y seguir las novedades!${aCL['noColor']}\n"
     
     echo -en  "Nombre completo ${aCL['byellow']}<Full Name>${aCL['noColor']}?> "
     read -rp "" sNombreUsuario
@@ -322,7 +342,7 @@ AutoActualizar() {
     fi
 } #AutoActualizar
 
-#######################################################################
+##############################[ 🚀 Procesar parámetros ]##############################
 # Procesamiento de parámetros de entrada
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -380,11 +400,51 @@ CheckUpdate
 
 #######################################################################
 # Aquí comienza la acción
+##############################[ 🔑 Leer Cookies desde el Navegador ]##############################
+sDominio="$(echo "${sUrl}" | awk -F/ '{print $3}' | tr '[:upper:]' '[:lower:]')"
+sCookies=""
+declare -a aDominiosCookies=("instagram.com" "facebook.com" "youtube.com" "youtu.be" "twitter.com" "x.com" "tiktok.com" "reddit.com" "twitch.tv" "onlyfans.com" "patreon.com" "fanhouse.app")
+bDominioRequiere=0
+for sDominioListado in "${aDominiosCookies[@]}"; do
+    [[ "${sDominio}" == *"${sDominioListado}" ]] && { bDominioRequiere=1; break; }
+done
+
+if [[ "${bDominioRequiere}" -eq 1 ]]; then
+    LogMsg INFO "Probando autentificación con cookies para ${sUrl} de ${sDominio})"
+    
+    # 1. Firefox primero
+    sTestTitle="$(yt-dlp --get-title --skip-download --cookies-from-browser firefox "${sUrl}" 2>/dev/null | tail -1)"
+    if [[ -n "$sTestTitle" && "$sTestTitle" != "NA" ]]; then
+        LogMsg OK "Autenticación VÁLIDA con Firefox para ${sDominio} (Título: '$sTestTitle')"
+        sCookies="firefox"
+    else
+        LogMsg INFO "Las cookies de Firefox NO sirvieron para autenticación en ${sDominio}, probando Chrome..."
+        sTestTitle="$(yt-dlp --get-title --skip-download --cookies-from-browser chrome "${sUrl}" 2>/dev/null | tail -1)"
+        if [[ -n "$sTestTitle" && "$sTestTitle" != "NA" ]]; then
+            LogMsg OK "Autenticación VÁLIDA con Chrome para ${sDominio} (Título: '$sTestTitle')"
+            sCookies="chrome"
+        else
+            LogMsg WARN "Dominio ${sDominio} identificado pero ningún navegador provee autenticación funcional. Continuando en modo público..."
+            bDominioRequiere=0
+        fi
+    fi
+
+else
+    LogMsg INFO "Dominio ${sDominio} no requiere autenticación por defecto, no buscaré cookies."
+fi
+
+#Verificar si es un video solo o una playlist
 echo -e "${aCL['byellow']}Procurando determinar la naturaleza de la URL ${sUrl} ${aCL['bcyan']}${aCL['noColor']}"
-sYtDlpResult=$(yt-dlp --flat-playlist --skip-download "${sUrl}" 2>&1 || true)
+if [[ "${bVerbose}" -eq 1 ]]; then
+   sYtDlpResult=$(yt-dlp  --flat-playlist --skip-download  "${sCookies} ${sUrl}")
+   #sYtDlpResult=$(yt-dlp  --flat-playlist --skip-download  "${sCookies} ${sUrl}" || true)
+   LogMsg INFO "Resultado de la pesquiza:  ${sYtDlpResult} "
+else
+    sYtDlpResult=$(yt-dlp  --flat-playlist --skip-download "${sCookies} ${sUrl}" 2>&1 || true)
+fi
 if echo "${sYtDlpResult}" | grep -q '\[playlist\]' || [[ "${sUrl}" == *"playlist"* ]]; then
     bEsPlaylist=1
-    sNombrePlaylist=$(yt-dlp --flat-playlist --print "%(playlist_title)s" "${sUrl}" 2>&1 | head -1 | sed 's/[ \/\\:*?"<>|]/_/g' | sed 's/[^A-Za-z0-9._-]/_/g')
+    sNombrePlaylist=$(yt-dlp "${sCookies}" --flat-playlist --print "%(playlist_title)s" "${sUrl}" 2>&1 | head -1 | sed 's/[ \/\\:*?"<>|]/_/g' | sed 's/[^A-Za-z0-9._-]/_/g')
     fDirectorioDescarga="${sNombrePlaylist:-Playlist_$(date +%s)}"
     mkdir -p "${fDirectorioDescarga}"
     fArchivoLog="${sDirectorioOriginal}/${fDirectorioDescarga}/vidop-itcomm.log"
@@ -392,8 +452,8 @@ if echo "${sYtDlpResult}" | grep -q '\[playlist\]' || [[ "${sUrl}" == *"playlist
     LogMsg OK "Intentaré procesar la playlist: ${aCL['bcyan']}${sNombrePlaylist} ${aCL['noColor']}"
 else
     bEsPlaylist=0
-    sTituloTmp=$(yt-dlp --get-title --skip-download "${sUrl}" 2>/dev/null | head -1)
-    sIdTmp=$(yt-dlp --get-id --skip-download "${sUrl}" 2>/dev/null | head -1)
+    sTituloTmp=$(yt-dlp "${sCookies}" --get-title --skip-download "${sUrl}" 2>/dev/null | head -1)
+    sIdTmp=$(yt-dlp "${sCookies}" --get-id --skip-download "${sUrl}" 2>/dev/null | head -1)
     sNomUnico=""
     if [[ -n "$sTituloTmp" ]]; then
         sNomUnico="$(echo "${sTituloTmp:0:20}" | sed 's/[^A-Za-z0-9._-]/_/g' | sed 's/^[ _-]*//;s/[ _-]*$//')"
@@ -404,7 +464,7 @@ else
     mkdir -p "${fDirectorioDescarga}"
     fArchivoLog="${sDirectorioOriginal}/${fDirectorioDescarga}/vidop-itcomm.log"
     > "${fArchivoLog}"
-    LogMsg INFO "Intentaré procesar un archivo de video. Carpeta: ${aCL['bcyan']}${fDirectorioDescarga}${aCL['noColor']}"
+    LogMsg OK "Intentaré procesar un archivo de video. Carpeta: ${aCL['bcyan']}${fDirectorioDescarga}${aCL['noColor']}"
 fi
 
 #######################################################################
@@ -424,6 +484,13 @@ aComandoYtDlp=(
     --write-info-json --no-warnings --progress --newline
     -P "."
 )
+
+# Agregar Cookies
+if [[ "${bDominioRequiere}" -eq 1 && -n "${sCookies}" ]]; then
+   aComandoYtDlp+=(--cookies-from-browser "${sCookies}")
+fi
+
+##############################[ 🎯 Continuar construyendo el comando ]##############################
 if [[ -n "${sSeccion}" ]]; then
     aComandoYtDlp+=(--download-sections "*${sSeccion}")
 fi
@@ -580,22 +647,22 @@ else
     exit 1
 fi
 
-#######################################################################
+##############################[ 📅 CHANGELOG ]##############################
 # ChangeLog. Cambios relevantes:
-# 20250701 Colores en la ayuda, error parpadeante y resumen tabular final amigable
-# 20250701 Mnemonicos de color homogéneos
-# 20250725 Manejo de -s/--seccion para porciones del video 
-# 20250726 Nuevo parámetro --st/--subs para obtenerlos si estan disponibles en archivos .srt externos, idioma configurable
-# 20250801 Log siempre con timestamps y progreso incluído, ubicado en la carpeta de los archivos descargados
-# 20250801 Resumen avanzado: videos/audios descargados, errores, ubicación, frames extraídos y cantidad de subtítulos
-# 20250801 Aviso proactivo de nueva versión, sólo con -a/--actualizar. Validación/filtro de parametros
-# 20250802 Detectar el tipo de archivo (audio/video) con el archivo físico, no por la metadata del JSON
+# 20250812 Cookies del Navegador Chrome o Firefox
+# 20250805 Integra arte y notificaciones de nuevas herramientas en update
+# 20250805 Función ValidarDependencias(), bloque git clone sin output
+# 20250804 Verificacion de versiones desde github raw (sin API JSON) y actualización por git temporal en directorio único
 # 20250803 Corrección: conteo y tablas trabajar siempre situado en la carpeta de trabajo
 # 20250803 CSV generado en carpeta de trabajo, incluyendo encabezado y filas
 # 20250803 Listado de formatos con --list-formats si no es playlist, para info en log
 # 20250803 Agregada columna URL al CSV reportado para auditoría y postproceso OSINT
-# 20250804 Verificacion de versiones desde github raw (sin API JSON) y actualización por git temporal en directorio único
-# 20250805 Integra arte y notificaciones de nuevas herramientas en update
-# 20250805 Función ValidarDependencias(), bloque git clone sin output 
-
+# 20250802 Detectar el tipo de archivo (audio/video) con el archivo físico, no por la metadata del JSON
+# 20250801 Log siempre con timestamps y progreso incluído, ubicado en la carpeta de los archivos descargados
+# 20250801 Resumen avanzado: videos/audios descargados, errores, ubicación, frames extraídos y cantidad de subtítulos
+# 20250801 Aviso proactivo de nueva versión, sólo con -a/--actualizar. Validación/filtro de parametros
+# 20250726 Nuevo parámetro --st/--subs para obtenerlos si estan disponibles en archivos .srt externos, idioma configurable
+# 20250725 Manejo de -s/--seccion para porciones del video 
+# 20250701 Mnemonicos de color homogéneos
+# 20250701 Colores en la ayuda, error parpadeante y resumen tabular final amigable
 
