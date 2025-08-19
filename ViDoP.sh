@@ -581,7 +581,7 @@ if [[ "${bError}" -eq 0 ]]; then
     nNumSubtitulos=0
     sSeparadorMilesLocal=$(locale thousands_sep 2>/dev/null)
     sSeparadorMiles="${sSeparadorMilesLocal:-','}"
-    nAnchoTabla=90
+    nAnchoTabla=115
     ImprimeLineaAlineada "c" "=" "${nAnchoTabla}" " Resumen del proceso realizado " | tee -a "${fArchivoLog}"
     sCabecera=$(printf "%-25s %-36s %-10s %-12s %-12s %15s" "Subido Por" "Título" "Tipo" "Fecha" "Subtítulos" "Vistas")
     echo -e "${aCL['bmagenta']}${sCabecera}${aCL['noColor']}" | tee -a "${fArchivoLog}"
