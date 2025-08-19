@@ -503,7 +503,7 @@ if [[ -n "${sSeccion}" ]]; then
     aComandoYtDlp+=(--download-sections "*${sSeccion}")
 fi
 case "${sModo,,}" in
-    audio)
+    audio|mp3)
         aComandoYtDlp+=(-f bestaudio --extract-audio --audio-format mp3)
         ;;
     video)
@@ -657,7 +657,7 @@ fi
 
 ##############################[ 📅 CHANGELOG ]##############################
 # ChangeLog. Cambios relevantes:
-# 20250812 Cookies del Navegador Chrome o Firefox
+# 20250812 Cookies del Navegador Chrome o Firefox (ojo: Del perfil DEFAULT)
 # 20250805 Integra arte y notificaciones de nuevas herramientas en update
 # 20250805 Función ValidarDependencias(), bloque git clone sin output
 # 20250804 Verificacion de versiones desde github raw (sin API JSON) y actualización por git temporal en directorio único
@@ -673,5 +673,3 @@ fi
 # 20250725 Manejo de -s/--seccion para porciones del video 
 # 20250701 Mnemonicos de color homogéneos
 # 20250701 Colores en la ayuda, error parpadeante y resumen tabular final amigable
-
-
