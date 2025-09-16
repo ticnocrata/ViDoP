@@ -32,6 +32,7 @@
 # Clonar el repositorio
 git clone https://github.com/ticnocrata/ViDoP.git
 # Copiar la herramienta
+chmod +x ViDoP/ViDoP.sh
 cp ViDoP/ViDoP.sh    ~/.local/bin/vidop
 ```
 
